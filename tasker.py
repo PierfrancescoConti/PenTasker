@@ -2,6 +2,7 @@ from os import system, name
 import subprocess
 import PySimpleGUI as sg
 from GUI import Gui
+from threading import Thread
 import re 
 
 
@@ -63,11 +64,46 @@ def get_ports(output0):
 
 
 
+# Thread Calls
+def call_nikto(values, ip_addr):
+    output, error=task_nikto(values, ip_addr)
+    output=output.decode()
+    if error!=None:
+        print("ERROR!")
+    output = clean_out_nikto(output)
+    print('\033[44;1m   Nikto                                                                      \033[0m\n')
+    print(output)
+    print('\033[44;1m                                                                              \033[0m')
+    print('------------------------------------------------------------------------------')
+
+def call_testssl(values, ip_addr, num_threads):
+    output, error=task_testssl(values, ip_addr, num_threads)
+    output=output.decode()
+    if error!=None:
+        print("ERROR!")
+    output = clean_out_testssl(output)      # comment this line to obtain the real output (to add inside tabs)
+    print('\033[44;1m   TestSSL.sh                                                                 \033[0m\n')
+    print(output[:-3])
+    print('\033[44;1m                                                                              \033[0m')
+    print('------------------------------------------------------------------------------')
+
+def call_dirsearch(values, url, num_threads):
+    output, error=task_dirsearch(values, url, num_threads)
+    output=output.decode()
+    if error!=None:
+        print("ERROR!")
+    output = clean_out_dirsearch(output)
+    print('\033[44;1m   DirSearch                                                                  \033[0m\n')
+    print(output)
+    print('\033[44;1m                                                                              \033[0m')
+    print('------------------------------------------------------------------------------')
+
+
 
 
 # Tasks
-def task_nslookup(values):
-    bashCommand = "nslookup "+values['-URL-']
+def task_nslookup(values, url):
+    bashCommand = "nslookup "+url
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
@@ -78,16 +114,19 @@ def task_nmap(values, ip_addr):
         output, error = process.communicate()
         output=output.decode("UTF-8")
         ports = get_ports(output)
-        ######## RILANCIARE IL COMANDO CON -A #########
-        bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -A -p "
-        for p in ports:
-            bashCommand+=p+','
-        bashCommand=bashCommand[:-1]+' '+ip_addr
-        print(bashCommand)      # DEBUG
-        print('\033[32;1mDetected ports:\033[0m '+ ', '.join(ports) +'\n')
-        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-        output, error =  process.communicate()
-        output=output.decode("UTF-8")
+        if len(ports)==0:
+            print("\033[31;1mNo ports detected... Maybe the host is down.\033[0m ")
+        else:
+            ######## RILANCIARE IL COMANDO CON -A #########
+            bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -A -p "
+            for p in ports:
+                bashCommand+=p+','
+            bashCommand=bashCommand[:-1]+' '+ip_addr
+            print(bashCommand)      # DEBUG
+            print('\033[32;1mDetected ports:\033[0m '+ ', '.join(ports) +'\n')
+            process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+            output, error =  process.communicate()
+            output=output.decode("UTF-8")
         
     else:
         bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -p- "+ip_addr
@@ -95,23 +134,42 @@ def task_nmap(values, ip_addr):
         output, error =  process.communicate()
         output=output.decode("UTF-8")
         ports = get_ports(output)
-        ######## RILANCIARE IL COMANDO CON -A #########
-        bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -A -p "
-        print(bashCommand)      # DEBUG
-        for p in ports:
-            bashCommand+=p+','
-        bashCommand=bashCommand[:-1]+' '+ip_addr
-        print('\033[32;1mDetected ports:\033[0m '+ ', '.join(ports) +'\n')
-        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-        output, error =  process.communicate()
-        output=output.decode("UTF-8")
+        if len(ports)==0:
+            print("\033[33;1mNo ports detected... Maybe the host is down.\033[0m")
+        else:
+            ######## RILANCIARE IL COMANDO CON -A #########
+            bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -A -p "
+            print(bashCommand)      # DEBUG
+            for p in ports:
+                bashCommand+=p+','
+            bashCommand=bashCommand[:-1]+' '+ip_addr
+            print('\033[32;1mDetected ports:\033[0m '+ ', '.join(ports) +'\n')
+            process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+            output, error =  process.communicate()
+            output=output.decode("UTF-8")
 
     return output, ports
+
+
 
 def task_nikto(values, ip_addr):
     bashCommand = "nikto -h "+ip_addr
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
+
+def task_dirsearch(values, url, num_threads):
+    bashCommand = "python3 tools/dirsearch/dirsearch.py -u " + url + " -e ,html,txt,php,aspx -t " + str(num_threads)
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    return process.communicate()
+
+def task_testssl(values, ip_addr, num_threads):
+    bashCommand = "./tools/testssl.sh/testssl.sh " + ip_addr
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    return process.communicate()
+
+
+
+
 
 
 
@@ -157,6 +215,36 @@ def clean_out_nikto(output):
             ret+=line + '\n'
     return ret
 
+def clean_out_testssl(output):
+    out=output.split('\n')
+    ret=''
+    x=False
+    for line in out:
+        if ' Start ' in line or ' Done ' in line:
+            ret+=line + '\n\n'
+        elif 'Rating (experimental)' in line:
+            x=True
+            ret+=line + '\n'
+        elif x==False:
+            continue
+        else:
+            ret+=line + '\n'
+    return ret
+
+def clean_out_dirsearch(output):
+    out=output.split('\n')
+    ret=''
+    x=False
+    for line in out:
+        if 'Extensions:' in line:
+            x=True
+            ret+=line + '\n'
+        elif 'Error Log:' in line or 'Output File:' in line or '] 400 - ' in line or '] 401 - ' in line or '] 402 - ' in line or '] 403 - ' in line or '] 404 - ' in line or x==False:
+            continue
+        else:
+            ret+=line + '\n'
+    return ret
+
 
 
 
@@ -174,15 +262,23 @@ def tasks(values):
     url=url.replace('http://','')
     url=url.replace('https://','')
     print("> URL = "+url+'\n')     # DEBUG
+    threads=[]
+    port = '0'
+    num_threads=values['-THREADS-']
 
     domain=url.split('/')[0]
+    if ':' in domain:
+        port = domain.split(':')[1]
+        domain = domain.split(':')[0]
+        
+    print(domain+' - '+port)
     isAip=checkIP(domain)
     ip_addr=''
     if isAip:
         ip_addr=domain
     
     ##################################################################
-    output, error=task_nslookup(values)
+    output, error=task_nslookup(values, domain)
     output=output.decode("utf-8")
     
     if error!=None:
@@ -205,6 +301,8 @@ def tasks(values):
     ##################################################################
     if values['-tool1-']==True:                       # nmap
         output, ports=task_nmap(values, ip_addr)
+        if len(ports)==0:
+            return
         #output=output.decode("utf-8")
         if error!=None:
             print("ERROR!")
@@ -220,17 +318,40 @@ def tasks(values):
     ##################################################################
     ##################################################################
     if values['-tool2-']==True:                       # nikto
-        output, ports=task_nikto(values, ip_addr)
-        output=output.decode()
-        if error!=None:
-            print("ERROR!")
-        output = clean_out_nikto(output)
-        print('\033[44;1m   Nikto                                                                      \033[0m\n')
-        print(output)
-        print('\033[44;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        process = Thread(target=call_nikto, args=[values, ip_addr])  
+        process.start()
+        threads.append(process)
+
+        
     else:
         print('\033[47;1m\033[34;1m   Nikto                                                                      \033[0m\n')
+        print('\033[47;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    ##################################################################
+    ##################################################################
+    if values['-tool4-']==True:                       # testssl.sh
+
+        process = Thread(target=call_testssl, args=[values, ip_addr, num_threads])  
+        process.start()
+        threads.append(process)
+
+        
+    else:
+        print('\033[47;1m\033[34;1m   TestSSL.sh                                                                 \033[0m\n')
+        print('\033[47;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    ##################################################################
+    ##################################################################
+    if values['-tool5-']==True:                       # dirsearch
+
+        
+        process = Thread(target=call_dirsearch, args=[values, url, num_threads])  
+        process.start()
+        threads.append(process)
+
+        
+    else:
+        print('\033[47;1m\033[34;1m   DirSearch                                                                  \033[0m\n')
         print('\033[47;1m                                                                              \033[0m')
         print('------------------------------------------------------------------------------')
     ##################################################################
@@ -239,8 +360,10 @@ def tasks(values):
 
 
 
-
     #~ END ~#
+    print("Waiting for threads...")         # DEBUG
+    for process in threads:
+        process.join()
     print('\033[42;1m\033[37;1m                                PT completed!                                 \033[0m\n')
     return
 
@@ -252,6 +375,7 @@ def tasks(values):
 # Event Loop to process "events" and get the "values" of the inputs
 gui= Gui()
 win=gui.window
+help_message='You can insert the URL in any format including the following parameters:\n\n\t\t\thttp://IPorDomain:port/path\n\nThe only mandatory parameter is IPorDomain.\n\nExamples of available formats are:\n\n\t-\t192.168.0.17\n\n\t-\t192.168.0.17:8080\n\n\t-\texample.com\n\n\t-\texample.com:8080/login.php' 
 while True:
     event, values = gui.window.read()
     if event == sg.WIN_CLOSED or event == 'Cancel':	# if user closes window or clicks cancel
@@ -263,6 +387,8 @@ while True:
     if event == "Deselect all":  
         for x in range(0,9):
             win.FindElement('-tool{}-'.format(x)).Update(False)
+    if event == "?":  
+        sg.Popup(help_message)
 
     if event == "Launch":           # Get Parameters and Start tasks
         if values['-URL-']=='':
