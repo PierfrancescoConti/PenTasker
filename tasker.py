@@ -76,6 +76,17 @@ def call_nikto(values, ip_addr):
     print('\033[44;1m                                                                              \033[0m')
     print('------------------------------------------------------------------------------')
 
+def call_vulscan(values, ip_addr, ports):
+    output, error=task_vulscan(values, ip_addr, ports)
+    output=output.decode()
+    if error!=None:
+        print("ERROR!")
+    output = clean_out_vulscan(output)
+    print('\033[44;1m   VulScan                                                                    \033[0m\n')
+    print(output)
+    print('\033[44;1m                                                                              \033[0m')
+    print('------------------------------------------------------------------------------')
+
 def call_testssl(values, ip_addr, num_threads):
     output, error=task_testssl(values, ip_addr, num_threads)
     output=output.decode()
@@ -107,13 +118,15 @@ def task_nslookup(values, url):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
-def task_nmap(values, ip_addr):
+def task_nmap(values, ip_addr, ports):
     if values['-RADIO1-']:          # Fast
-        bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " "+ip_addr
-        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
-        output, error = process.communicate()
-        output=output.decode("UTF-8")
-        ports = get_ports(output)
+        if len(ports)==0:
+            bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " "+ip_addr
+            process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+            output, error = process.communicate()
+            output=output.decode("UTF-8")
+            ports = get_ports(output)
+
         if len(ports)==0:
             print("\033[31;1mNo ports detected... Maybe the host is down.\033[0m ")
         else:
@@ -152,8 +165,20 @@ def task_nmap(values, ip_addr):
 
 
 
-def task_nikto(values, ip_addr):
-    bashCommand = "nikto -h "+ip_addr
+def task_nikto(values, ip_addr, port):
+    if port=='0':
+        bashCommand = "nikto -h "+ip_addr
+    else:
+        bashCommand = "nikto -p "+port+" -h "+ip_addr
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    return process.communicate()
+
+def task_vulscan(values, ip_addr, ports):
+    bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -sV --script=tools/vulscan/vulscan.nse -p "
+    for p in ports:
+        bashCommand+=p+','
+    bashCommand=bashCommand[:-1]+' '+ip_addr
+    print(bashCommand)      # DEBUG
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
@@ -215,6 +240,9 @@ def clean_out_nikto(output):
             ret+=line + '\n'
     return ret
 
+def clean_out_vulscan(output):
+    return output.split('\n\n')[1]+'\n'
+
 def clean_out_testssl(output):
     out=output.split('\n')
     ret=''
@@ -249,7 +277,16 @@ def clean_out_dirsearch(output):
 
 
 
-
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
+#___________________________________________________________________________________________________________________________________________________________#
 
 
 
@@ -264,6 +301,7 @@ def tasks(values):
     print("> URL = "+url+'\n')     # DEBUG
     threads=[]
     port = '0'
+    ports = []
     num_threads=values['-THREADS-']
 
     domain=url.split('/')[0]
@@ -271,7 +309,17 @@ def tasks(values):
         port = domain.split(':')[1]
         domain = domain.split(':')[0]
         
-    print(domain+' - '+port)
+    print(domain+' - '+port)    # DEBUG
+    if port!='0':
+        val=sg.PopupYesNo("\nPenTasker will focus the scan on port "+port+". \n\nThis reduces the number of requests and the execution will be faster. \n\n\tAre you sure?",
+                        title="Focus on port "+port+"?",button_color=('white', 'blue'))
+        if val=="Yes":
+            if isANint(port):
+                ports.append(port)
+            print(val)     # DEBUG
+        else:
+            port='0'
+    
     isAip=checkIP(domain)
     ip_addr=''
     if isAip:
@@ -300,7 +348,7 @@ def tasks(values):
     ##################################################################
     ##################################################################
     if values['-tool1-']==True:                       # nmap
-        output, ports=task_nmap(values, ip_addr)
+        output, ports=task_nmap(values, ip_addr, ports)
         if len(ports)==0:
             return
         #output=output.decode("utf-8")
@@ -325,6 +373,18 @@ def tasks(values):
         
     else:
         print('\033[47;1m\033[34;1m   Nikto                                                                      \033[0m\n')
+        print('\033[47;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    ##################################################################
+    ##################################################################
+    if values['-tool3-']==True:                       # vulscan
+        process = Thread(target=call_vulscan, args=[values, ip_addr, ports])  
+        process.start()
+        threads.append(process)
+
+        
+    else:
+        print('\033[47;1m\033[34;1m   VulScan                                                                    \033[0m\n')
         print('\033[47;1m                                                                              \033[0m')
         print('------------------------------------------------------------------------------')
     ##################################################################

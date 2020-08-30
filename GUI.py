@@ -20,16 +20,16 @@ class Gui:
         sg.theme('DarkBlue')
         sg.SetOptions(element_padding=((10,10),9))
         col1 = [
-               [sg.Checkbox(' NsLookup', size=(15,1),default=True, key='-tool0-')],
-               [sg.Checkbox(' Nmap', size=(15,1),default=True, key='-tool1-')],
+               [sg.Checkbox(' NsLookup', size=(15,1),default=True, disabled=True, key='-tool0-')],
+               [sg.Checkbox(' Nmap', size=(15,1),default=True, disabled=True, key='-tool1-')],
                [sg.Checkbox(' Nikto', size=(15,1),default=True, key='-tool2-')],
-               [sg.Checkbox(' Sqlmap', size=(15,1),default=True, key='-tool3-')],
+               [sg.Checkbox(' VulScan', size=(15,1),default=True, key='-tool3-')],
                [sg.Checkbox(' TestSSL.sh', size=(15,1),default=True, key='-tool4-')]
                ]
 
         col2 = [
                [sg.Checkbox(' DirSearch', size=(9,1),default=True, key='-tool5-')],
-               [sg.Checkbox(' Tool6', size=(9,1),default=True, key='-tool6-')],
+               [sg.Checkbox(' Sqlmap', size=(9,1),default=True, key='-tool6-')],
                [sg.Checkbox(' Tool7', size=(9,1),default=True, key='-tool7-')],
                [sg.Checkbox(' Tool8', size=(9,1),default=True, key='-tool8-')],
                [sg.Checkbox(' Custom', size=(9,1), key='-custom-')]
