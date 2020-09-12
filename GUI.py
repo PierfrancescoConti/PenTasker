@@ -30,7 +30,7 @@ class Gui:
         col2 = [
                [sg.Checkbox(' DirSearch', size=(9,1),default=True, key='-tool5-')],
                [sg.Checkbox(' Sqlmap', size=(9,1),default=True, key='-tool6-')],
-               [sg.Checkbox(' Tool7', size=(9,1),default=True, key='-tool7-')],
+               [sg.Checkbox(' LiteRespH', size=(9,1),default=True, key='-tool7-')],
                [sg.Checkbox(' Tool8', size=(9,1),default=True, key='-tool8-')],
                [sg.Checkbox(' Custom', size=(9,1), key='-custom-')]
                ]

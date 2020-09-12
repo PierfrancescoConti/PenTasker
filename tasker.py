@@ -109,6 +109,17 @@ def call_dirsearch(values, url, num_threads):
     print('\033[44;1m                                                                              \033[0m')
     print('------------------------------------------------------------------------------')
 
+def call_literesph(url):
+    output, error=task_literesph(url)
+    output=output.decode()
+    if error!=None:
+        print("ERROR!")
+    #output = clean_out_literesph(output)       # output too perfect, no need to clean
+    print('\033[44;1m   LiteRespH                                                                  \033[0m\n')
+    print(output)
+    print('\033[44;1m                                                                              \033[0m')
+    print('------------------------------------------------------------------------------')
+
 
 
 
@@ -192,6 +203,11 @@ def task_testssl(values, ip_addr, num_threads):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
+def task_literesph(url):
+    bashCommand = "python3 tools/LiteRespH/literesph.py " + url
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    return process.communicate()
+
 
 
 
@@ -272,6 +288,9 @@ def clean_out_dirsearch(output):
         else:
             ret+=line + '\n'
     return ret
+
+def clean_out_literesph(output):               # output too perfect, no need to clean
+    return output
 
 
 
@@ -415,6 +434,20 @@ def tasks(values):
         print('\033[47;1m                                                                              \033[0m')
         print('------------------------------------------------------------------------------')
     ##################################################################
+    ##################################################################
+    if values['-tool7-']==True:                       # literesph
+
+        
+        process = Thread(target=call_literesph, args=[url])  
+        process.start()
+        threads.append(process)
+
+        
+    else:
+        print('\033[47;1m\033[34;1m   LiteRespH                                                                  \033[0m\n')
+        print('\033[47;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    ##################################################################
 
 
 
@@ -445,7 +478,7 @@ while True:
         for x in range(0,9):
             win.FindElement('-tool{}-'.format(x)).Update(True)
     if event == "Deselect all":  
-        for x in range(0,9):
+        for x in range(2,9):
             win.FindElement('-tool{}-'.format(x)).Update(False)
     if event == "?":  
         sg.Popup(help_message)
