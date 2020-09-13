@@ -1,10 +1,13 @@
-from os import system, name 
+from os import system, name, path, makedirs
+import tkinter as tk
+from tkinter import ttk
+from time import gmtime, strftime
 import subprocess
 import PySimpleGUI as sg
-from GUI import Gui
+from GUI import Gui, Gui2
 from threading import Thread
 import re 
-
+import json
 
 # Utils
 def clear(): 
@@ -65,56 +68,82 @@ def get_ports(output0):
 
 
 # Thread Calls
-def call_nikto(values, ip_addr):
+def call_nikto(values, ip_addr,diz):
     output, error=task_nikto(values, ip_addr)
     output=output.decode()
     if error!=None:
         print("ERROR!")
     output = clean_out_nikto(output)
+    data={
+        'tool':'Nikto',
+        'output':output
+    }
+    diz["tabs"].append(data)
     print('\033[44;1m   Nikto                                                                      \033[0m\n')
     print(output)
     print('\033[44;1m                                                                              \033[0m')
     print('------------------------------------------------------------------------------')
 
-def call_vulscan(values, ip_addr, ports):
+def call_vulscan(values, ip_addr, ports,diz):
     output, error=task_vulscan(values, ip_addr, ports)
     output=output.decode()
     if error!=None:
         print("ERROR!")
     output = clean_out_vulscan(output)
+    data={
+        'tool':'VulScan',
+        'output':output
+    }
+    diz["tabs"].append(data)
     print('\033[44;1m   VulScan                                                                    \033[0m\n')
     print(output)
     print('\033[44;1m                                                                              \033[0m')
     print('------------------------------------------------------------------------------')
 
-def call_testssl(values, ip_addr, num_threads):
+def call_testssl(values, ip_addr, num_threads,diz):
     output, error=task_testssl(values, ip_addr, num_threads)
     output=output.decode()
     if error!=None:
         print("ERROR!")
-    output = clean_out_testssl(output)      # comment this line to obtain the real output (to add inside tabs)
+    data={
+        'tool':'TestSSL.sh',
+        'output':output
+    }
+    diz["tabs"].append(data)
+    output = clean_out_testssl(output)
+    
     print('\033[44;1m   TestSSL.sh                                                                 \033[0m\n')
     print(output[:-3])
     print('\033[44;1m                                                                              \033[0m')
     print('------------------------------------------------------------------------------')
 
-def call_dirsearch(values, url, num_threads):
+def call_dirsearch(values, url, num_threads,diz):
     output, error=task_dirsearch(values, url, num_threads)
     output=output.decode()
     if error!=None:
         print("ERROR!")
     output = clean_out_dirsearch(output)
+    data={
+        'tool':'DirSearch',
+        'output':output
+    }
+    diz["tabs"].append(data)
     print('\033[44;1m   DirSearch                                                                  \033[0m\n')
     print(output)
     print('\033[44;1m                                                                              \033[0m')
     print('------------------------------------------------------------------------------')
 
-def call_literesph(url):
+def call_literesph(url,diz):
     output, error=task_literesph(url)
     output=output.decode()
     if error!=None:
         print("ERROR!")
     #output = clean_out_literesph(output)       # output too perfect, no need to clean
+    data={
+        'tool':'LiteRespH',
+        'output':output
+    }
+    diz["tabs"].append(data)
     print('\033[44;1m   LiteRespH                                                                  \033[0m\n')
     print(output)
     print('\033[44;1m                                                                              \033[0m')
@@ -322,6 +351,14 @@ def tasks(values):
     port = '0'
     ports = []
     num_threads=values['-THREADS-']
+    fname=strftime("%Y-%m-%d %H:%M:%S", gmtime())+".ptsk"
+    if not path.exists('projects'):
+        makedirs('projects')
+    f=open("projects/"+fname, 'w', encoding='utf-8')
+    diz={}
+    diz["tabs"]=[]
+    
+
 
     domain=url.split('/')[0]
     if ':' in domain:
@@ -351,6 +388,12 @@ def tasks(values):
     if error!=None:
         print("ERROR!")
     output, ip_addr, domain = clean_out_nslookup(output,isAip,ip_addr)
+    data={
+        'tool':'NsLookup',
+        'output':output
+    }
+    diz["tabs"].append(data)
+
     #print(domain)       # DEBUG
     if ": NXDOMA" in domain:
         domain=ip_addr
@@ -374,6 +417,11 @@ def tasks(values):
         if error!=None:
             print("ERROR!")
         output = clean_out_nmap(output)
+        data={
+            'tool':'Nmap',
+            'output':output
+        }
+        diz["tabs"].append(data)
         print('\033[44;1m   Nmap                                                                       \033[0m\n')
         print(output)
         print('\033[44;1m                                                                              \033[0m')
@@ -385,7 +433,7 @@ def tasks(values):
     ##################################################################
     ##################################################################
     if values['-tool2-']==True:                       # nikto
-        process = Thread(target=call_nikto, args=[values, ip_addr])  
+        process = Thread(target=call_nikto, args=[values, ip_addr,diz])  
         process.start()
         threads.append(process)
 
@@ -397,7 +445,7 @@ def tasks(values):
     ##################################################################
     ##################################################################
     if values['-tool3-']==True:                       # vulscan
-        process = Thread(target=call_vulscan, args=[values, ip_addr, ports])  
+        process = Thread(target=call_vulscan, args=[values, ip_addr, ports,diz])  
         process.start()
         threads.append(process)
 
@@ -410,7 +458,7 @@ def tasks(values):
     ##################################################################
     if values['-tool4-']==True:                       # testssl.sh
 
-        process = Thread(target=call_testssl, args=[values, ip_addr, num_threads])  
+        process = Thread(target=call_testssl, args=[values, ip_addr, num_threads,diz])  
         process.start()
         threads.append(process)
 
@@ -424,7 +472,7 @@ def tasks(values):
     if values['-tool5-']==True:                       # dirsearch
 
         
-        process = Thread(target=call_dirsearch, args=[values, url, num_threads])  
+        process = Thread(target=call_dirsearch, args=[values, url, num_threads,diz])  
         process.start()
         threads.append(process)
 
@@ -438,7 +486,7 @@ def tasks(values):
     if values['-tool7-']==True:                       # literesph
 
         
-        process = Thread(target=call_literesph, args=[url])  
+        process = Thread(target=call_literesph, args=[url,diz])  
         process.start()
         threads.append(process)
 
@@ -458,8 +506,9 @@ def tasks(values):
     for process in threads:
         process.join()
     print('\033[42;1m\033[37;1m                                PT completed!                                 \033[0m\n')
-    return
+    json.dump(diz, f, ensure_ascii=False, indent=4)
 
+    return
 
 
 
@@ -473,7 +522,7 @@ while True:
     event, values = gui.window.read()
     if event == sg.WIN_CLOSED or event == 'Cancel':	# if user closes window or clicks cancel
         win.close()
-        break
+        exit(0)
     if event == "Select all":  
         for x in range(0,9):
             win.FindElement('-tool{}-'.format(x)).Update(True)
@@ -482,6 +531,25 @@ while True:
             win.FindElement('-tool{}-'.format(x)).Update(False)
     if event == "?":  
         sg.Popup(help_message)
+    if event == '-BROWSE-':  
+        filename=sg.PopupGetFile(message="Pick a PTSK file",file_types=(("PTSK Files", "*.ptsk"),))
+
+        print(filename)     # DEBUG
+        if filename == None:        # Check for file validity
+            continue
+        
+        win.close()
+        gui= Gui2(filename)
+        win=gui.window
+        while True:
+            event, values = gui.window.read()
+            if event == sg.WIN_CLOSED or event == 'Close':	# if user closes window or clicks cancel
+                win.close()
+                exit(0)
+        break
+
+        
+        
 
     if event == "Launch":           # Get Parameters and Start tasks
         if values['-URL-']=='':
@@ -491,6 +559,8 @@ while True:
         win.close()
         
         tasks(values)       # main function
+        exit(0)
+
 
     
 
