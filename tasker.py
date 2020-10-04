@@ -517,7 +517,7 @@ def tasks(values):
 # Event Loop to process "events" and get the "values" of the inputs
 gui= Gui()
 win=gui.window
-help_message='You can insert the URL in any format including the following parameters:\n\n\t\t\thttp://IPorDomain:port/path\n\nThe only mandatory parameter is IPorDomain.\n\nExamples of available formats are:\n\n\t-\t192.168.0.17\n\n\t-\t192.168.0.17:8080\n\n\t-\texample.com\n\n\t-\texample.com:8080/login.php' 
+help_message='You can insert the URL in any format including the following parameters:\n\n\t\t\thttp://IPorDomain:port/path\n\nThe only mandatory parameter is IPorDomain.\n\nExamples of available formats are:\n\n\t-\t192.168.0.17\n\n\t-\t192.168.0.17:8080\n\n\t-\texample.com\n\n\t-\texample.com:8080/login.php\n' 
 while True:
     event, values = gui.window.read()
     if event == sg.WIN_CLOSED or event == 'Cancel':	# if user closes window or clicks cancel
