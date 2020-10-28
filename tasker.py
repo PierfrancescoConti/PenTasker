@@ -1,4 +1,5 @@
 from os import system, name, path, makedirs
+from glob import glob
 import tkinter as tk
 from tkinter import ttk
 from time import gmtime, strftime
@@ -68,8 +69,8 @@ def get_ports(output0):
 
 
 # Thread Calls
-def call_nikto(values, ip_addr,diz):
-    output, error=task_nikto(values, ip_addr)
+def call_nikto(values, ip_addr, port, diz):
+    output, error=task_nikto(values, ip_addr, port)
     output=output.decode()
     if error!=None:
         print("ERROR!")
@@ -325,6 +326,59 @@ def clean_out_literesph(output):               # output too perfect, no need to 
 
 
 
+
+
+def call_custom(url,diz):               # you can CUSTOMIZE this if needed
+    output, error=task_custom(url)
+    if error!=None:
+        print("ERROR!")
+    #output = clean_out_custom(output)       # output too perfect, no need to clean
+    data={
+        'tool':'Custom scripts',
+        'output':output
+    }
+    diz["tabs"].append(data)
+    print('\033[44;1m   Custom Scripts                                                             \033[0m\n')
+    print(output)
+    print('\033[44;1m                                                                              \033[0m')
+    print('------------------------------------------------------------------------------')
+
+
+def task_custom(url):
+    output = ""
+    for f in glob("tools/_custom/*.sh"):
+        output += "\n\n     ------------- \033[32;1m"+ f.split("/")[-1] + "\033[0m -------------     \n\n"
+        bashCommand = "./" + f + " " + url   # runs all .sh scripts inside the ./tools/_custom/ directory
+        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+        o, e = process.communicate()
+        output += o.decode()
+    for f in glob("tools/_custom/*.py"):
+        output += "\n\n     ------------- \033[32;1m"+ f.split("/")[-1] + "\033[0m -------------     \n\n"
+        bashCommand = "python3 " + f + " " + url   # runs all .py scripts inside the ./tools/_custom/ directory
+        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+        o, e = process.communicate()
+        output += o.decode()
+        output = output[2:]
+    return output,None      # assert error is None
+
+
+# function to filter useless rows from output
+def clean_out_custom(output):
+    out=output.split('\n')
+    ret=''
+    for line in out:
+        if 'Accepted word' in line:         # Whitelist: rows accepted if contain the specified word(s)
+            ret+=line + '\n'
+        elif 'Word' in line or 'Not Accepted word:' in line:         # Blacklist: rows deleted from output if contain the specified word(s) 
+            continue
+        else:
+            ret+=line + '\n'
+    return ret
+
+
+
+
+
 #___________________________________________________________________________________________________________________________________________________________#
 #___________________________________________________________________________________________________________________________________________________________#
 #___________________________________________________________________________________________________________________________________________________________#
@@ -433,7 +487,7 @@ def tasks(values):
     ##################################################################
     ##################################################################
     if values['-tool2-']==True:                       # nikto
-        process = Thread(target=call_nikto, args=[values, ip_addr,diz])  
+        process = Thread(target=call_nikto, args=[values, ip_addr, port, diz])  
         process.start()
         threads.append(process)
 
@@ -496,13 +550,27 @@ def tasks(values):
         print('\033[47;1m                                                                              \033[0m')
         print('------------------------------------------------------------------------------')
     ##################################################################
+    ##################################################################
+    if values['-custom-']==True:                       # custom
+
+        
+        process = Thread(target=call_custom, args=[url,diz])  
+        process.start()
+        threads.append(process)
+
+        
+    else:
+        print('\033[47;1m\033[34;1m   Custom Scripts                                                             \033[0m\n')
+        print('\033[47;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    ##################################################################
 
 
 
 
 
     #~ END ~#
-    print("Waiting for threads...")         # DEBUG
+    print("\n\033[34;1mINFO:\033[0m Waiting for threads...\n")         # DEBUG
     for process in threads:
         process.join()
     print('\033[42;1m\033[37;1m                                PT completed!                                 \033[0m\n')
@@ -563,6 +631,3 @@ while True:
 
 
     
-
-
-
