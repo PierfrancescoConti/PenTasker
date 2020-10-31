@@ -1,0 +1,16 @@
+{
+    "tabs": [
+        {
+            "tool": "NsLookup",
+            "output": "Name:\tyoutube.com\nAddress: 172.217.21.78\nName:\tyoutube.com\nAddress: 2a00:1450:4002:803::200e\n"
+        },
+        {
+            "tool": "Nmap",
+            "output": "PORT    STATE    SERVICE VERSION\n80/tcp  filtered http\n443/tcp filtered https\n"
+        },
+        {
+            "tool": "Custom scripts",
+            "output": ""
+        }
+    ]
+}

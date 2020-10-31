@@ -69,7 +69,7 @@ def get_ports(output0):
 
 
 # Thread Calls
-def call_nikto(values, ip_addr, port, diz):
+def call_nikto(values, ip_addr, port, diz, verbose):
     output, error=task_nikto(values, ip_addr, port)
     output=output.decode()
     if error!=None:
@@ -80,12 +80,16 @@ def call_nikto(values, ip_addr, port, diz):
         'output':output
     }
     diz["tabs"].append(data)
-    print('\033[44;1m   Nikto                                                                      \033[0m\n')
-    print(output)
-    print('\033[44;1m                                                                              \033[0m')
-    print('------------------------------------------------------------------------------')
+    if verbose:
+        print('\033[44;1m   Nikto                                                                      \033[0m\n')
+        print(output)
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   Nikto - completed                                                          \033[0m\n')
 
-def call_vulscan(values, ip_addr, ports,diz):
+
+def call_vulscan(values, ip_addr, ports,diz,verbose):
     output, error=task_vulscan(values, ip_addr, ports)
     output=output.decode()
     if error!=None:
@@ -96,12 +100,16 @@ def call_vulscan(values, ip_addr, ports,diz):
         'output':output
     }
     diz["tabs"].append(data)
-    print('\033[44;1m   VulScan                                                                    \033[0m\n')
-    print(output)
-    print('\033[44;1m                                                                              \033[0m')
-    print('------------------------------------------------------------------------------')
+    if verbose:
+        print('\033[44;1m   VulScan                                                                    \033[0m\n')
+        print(output)
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   VulScan - completed                                                        \033[0m\n')
 
-def call_testssl(values, ip_addr, num_threads,diz):
+
+def call_testssl(values, ip_addr, num_threads,diz,verbose):
     output, error=task_testssl(values, ip_addr, num_threads)
     output=output.decode()
     if error!=None:
@@ -112,13 +120,16 @@ def call_testssl(values, ip_addr, num_threads,diz):
     }
     diz["tabs"].append(data)
     output = clean_out_testssl(output)
-    
-    print('\033[44;1m   TestSSL.sh                                                                 \033[0m\n')
-    print(output[:-3])
-    print('\033[44;1m                                                                              \033[0m')
-    print('------------------------------------------------------------------------------')
+    if verbose:
+        print('\033[44;1m   TestSSL.sh                                                                 \033[0m\n')
+        print(output[:-3])
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   TestSSL.sh - completed                                                     \033[0m\n')
 
-def call_dirsearch(values, url, num_threads,diz):
+
+def call_dirsearch(values, url, num_threads,diz,verbose):
     output, error=task_dirsearch(values, url, num_threads)
     output=output.decode()
     if error!=None:
@@ -129,12 +140,16 @@ def call_dirsearch(values, url, num_threads,diz):
         'output':output
     }
     diz["tabs"].append(data)
-    print('\033[44;1m   DirSearch                                                                  \033[0m\n')
-    print(output)
-    print('\033[44;1m                                                                              \033[0m')
-    print('------------------------------------------------------------------------------')
+    if verbose:
+        print('\033[44;1m   DirSearch                                                                  \033[0m\n')
+        print(output)
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   DirSearch - completed                                                      \033[0m\n')
 
-def call_literesph(url,diz):
+
+def call_literesph(url,diz,verbose):
     output, error=task_literesph(url)
     output=output.decode()
     if error!=None:
@@ -145,10 +160,14 @@ def call_literesph(url,diz):
         'output':output
     }
     diz["tabs"].append(data)
-    print('\033[44;1m   LiteRespH                                                                  \033[0m\n')
-    print(output)
-    print('\033[44;1m                                                                              \033[0m')
-    print('------------------------------------------------------------------------------')
+    if verbose:
+        print('\033[44;1m   LiteRespH                                                                  \033[0m\n')
+        print(output)
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   LiteRespH - completed                                                      \033[0m\n')
+
 
 
 
@@ -274,7 +293,11 @@ def clean_out_nslookup(output,isAip, ip_addr):
 
 
 def clean_out_nmap(output):
-    return output.split('\n\n')[1]+'\n'
+    try:
+        return output.split('\n\n')[1]+'\n'
+    except:
+        print("Some problem occurred... maybe the scan is too fast")       #DEBUG
+        return output
 
 def clean_out_nikto(output):
     out=output.split('\n')
@@ -328,7 +351,7 @@ def clean_out_literesph(output):               # output too perfect, no need to 
 
 
 
-def call_custom(url,diz):               # you can CUSTOMIZE this if needed
+def call_custom(url,diz, verbose):               # you can CUSTOMIZE this if needed
     output, error=task_custom(url)
     if error!=None:
         print("ERROR!")
@@ -338,10 +361,13 @@ def call_custom(url,diz):               # you can CUSTOMIZE this if needed
         'output':output
     }
     diz["tabs"].append(data)
-    print('\033[44;1m   Custom Scripts                                                             \033[0m\n')
-    print(output)
-    print('\033[44;1m                                                                              \033[0m')
-    print('------------------------------------------------------------------------------')
+    if verbose:
+        print('\033[44;1m   Custom Scripts                                                             \033[0m\n')
+        print(output)
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   Custom Scripts - completed                                                 \033[0m\n')
 
 
 def task_custom(url):
@@ -395,9 +421,7 @@ def clean_out_custom(output):
 
 
 # Tasks Caller
-def tasks(values):
-    printLogo()
-    url=values['-URL-']
+def tasks(values, url, verbose):
     url=url.replace('http://','')
     url=url.replace('https://','')
     print("> URL = "+url+'\n')     # DEBUG
@@ -452,15 +476,19 @@ def tasks(values):
     if ": NXDOMA" in domain:
         domain=ip_addr
     if values['-tool0-']==True:                       # nslookup
-        print('\033[44;1m   NsLookup                                                                   \033[0m\n')
-        print(output)
-        
-        print('\033[44;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[44;1m   NsLookup                                                                   \033[0m\n')
+            print(output)
+
+            print('\033[44;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
+        else:
+            print('\033[44;1m   NsLookup - completed                                                       \033[0m\n')
     else:
-        print('\033[47;1m\033[34;1m   NsLookup                                                                   \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   NsLookup                                                                   \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
     if values['-tool1-']==True:                       # nmap
@@ -476,14 +504,18 @@ def tasks(values):
             'output':output
         }
         diz["tabs"].append(data)
-        print('\033[44;1m   Nmap                                                                       \033[0m\n')
-        print(output)
-        print('\033[44;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[44;1m   Nmap                                                                       \033[0m\n')
+            print(output)
+            print('\033[44;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
+        else:
+            print('\033[44;1m   Nmap - completed                                                           \033[0m\n')
     else:
-        print('\033[47;1m\033[34;1m   Nmap                                                                       \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   Nmap                                                                       \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
     if values['-tool2-']==True:                       # nikto
@@ -493,76 +525,82 @@ def tasks(values):
 
         
     else:
-        print('\033[47;1m\033[34;1m   Nikto                                                                      \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   Nikto                                                                      \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
     if values['-tool3-']==True:                       # vulscan
-        process = Thread(target=call_vulscan, args=[values, ip_addr, ports,diz])  
+        process = Thread(target=call_vulscan, args=[values, ip_addr, ports,diz, verbose])  
         process.start()
         threads.append(process)
 
         
     else:
-        print('\033[47;1m\033[34;1m   VulScan                                                                    \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   VulScan                                                                    \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
     if values['-tool4-']==True:                       # testssl.sh
 
-        process = Thread(target=call_testssl, args=[values, ip_addr, num_threads,diz])  
+        process = Thread(target=call_testssl, args=[values, ip_addr, num_threads,diz, verbose])  
         process.start()
         threads.append(process)
 
         
     else:
-        print('\033[47;1m\033[34;1m   TestSSL.sh                                                                 \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   TestSSL.sh                                                                 \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
     if values['-tool5-']==True:                       # dirsearch
 
         
-        process = Thread(target=call_dirsearch, args=[values, url, num_threads,diz])  
+        process = Thread(target=call_dirsearch, args=[values, url, num_threads,diz, verbose])  
         process.start()
         threads.append(process)
 
         
     else:
-        print('\033[47;1m\033[34;1m   DirSearch                                                                  \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   DirSearch                                                                  \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
     if values['-tool7-']==True:                       # literesph
 
         
-        process = Thread(target=call_literesph, args=[url,diz])  
+        process = Thread(target=call_literesph, args=[url,diz,verbose])  
         process.start()
         threads.append(process)
 
         
     else:
-        print('\033[47;1m\033[34;1m   LiteRespH                                                                  \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   LiteRespH                                                                  \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
     if values['-custom-']==True:                       # custom
 
         
-        process = Thread(target=call_custom, args=[url,diz])  
+        process = Thread(target=call_custom, args=[url,diz,verbose])  
         process.start()
         threads.append(process)
 
         
     else:
-        print('\033[47;1m\033[34;1m   Custom Scripts                                                             \033[0m\n')
-        print('\033[47;1m                                                                              \033[0m')
-        print('------------------------------------------------------------------------------')
+        if verbose:
+            print('\033[47;1m\033[34;1m   Custom Scripts                                                             \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
     ##################################################################
 
 
@@ -585,7 +623,7 @@ def tasks(values):
 # Event Loop to process "events" and get the "values" of the inputs
 gui= Gui()
 win=gui.window
-help_message='You can insert the URL in any format including the following parameters:\n\n\t\t\thttp://IPorDomain:port/path\n\nThe only mandatory parameter is IPorDomain.\n\nExamples of available formats are:\n\n\t-\t192.168.0.17\n\n\t-\t192.168.0.17:8080\n\n\t-\texample.com\n\n\t-\texample.com:8080/login.php\n' 
+help_message='You can insert the URL in any format including the following parameters:\n\n\t\t\thttp://IPorDomain:port/path\n\nThe only mandatory parameter is IPorDomain.\n\nExamples of available formats are:\n\n\t-\t192.168.0.17\n\n\t-\t192.168.0.17:8080\n\n\t-\texample.com\n\n\t-\texample.com:8080/login.php\n\n\nIn addition it is possible to pick a list of target from a file, by clicking the "Import list of targets" button or write more URL/IPs divided by the § character.\n\nP.S. the file should contain a target per line.\n' 
 while True:
     event, values = gui.window.read()
     if event == sg.WIN_CLOSED or event == 'Cancel':	# if user closes window or clicks cancel
@@ -598,7 +636,18 @@ while True:
         for x in range(2,9):
             win.FindElement('-tool{}-'.format(x)).Update(False)
     if event == "?":  
-        sg.Popup(help_message)
+        sg.Popup(help_message,title="Help message")
+    if event == '-LISTBTN-':  
+        filename=sg.PopupGetFile(message="Pick a text file containing a target per line",title="Pick a text file")
+
+        if filename == None:        # Check for file validity
+            continue
+        else:
+            targets=open(filename).read()
+            print(targets)     # DEBUG
+            win.FindElement('-URL-').Update(targets.replace("\n","§")[:-1])
+
+
     if event == '-BROWSE-':  
         filename=sg.PopupGetFile(message="Pick a PTSK file",file_types=(("PTSK Files", "*.ptsk"),))
 
@@ -624,9 +673,25 @@ while True:
             win.FindElement('-ERROR-').Update(' '*3+'<-  Required!',text_color='red')
             continue
         # other controls on URL/IP
+        win.hide()
         win.close()
+        verbose=True
+        printLogo()
         
-        tasks(values)       # main function
+        if "§" in values["-URL-"]:
+            verbose=False
+            urls=values["-URL-"].split("§")
+            threads=[]
+            num_threads=len(urls)
+            for u in urls:
+                process = Thread(target=tasks, args=[values, u, verbose])  
+                process.start()
+                threads.append(process)
+            for process in threads:
+                process.join()
+            
+        else:
+            tasks(values,values["-URL-"],verbose)       # main function
         exit(0)
 
 

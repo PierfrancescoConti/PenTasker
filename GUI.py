@@ -49,7 +49,7 @@ class Gui:
                 [sg.Frame('',[
                     [sg.Button('Select all'), sg.Button('Deselect all')],
                     [sg.Text('')],
-                    [sg.Text(' '*25), sg.Text('URL / IP: ', font=('Helvetica',13,'bold')), sg.Input('', size=(40,1), justification='center', key='-URL-'),sg.Button('', image_data=help_b64,button_color=(sg.theme_background_color(),sg.theme_background_color()),border_width=0, key='?'),sg.Text(' '*25, key='-ERROR-')],
+                    [sg.Text(' '*25), sg.Text('URL / IP: ', font=('Helvetica',13,'bold')), sg.Input('', size=(40,1), justification='center', key='-URL-'), sg.Button('Import list\nof targets', button_color=('white', '#3971c6'), size=(10,2), key='-LISTBTN-'),sg.Button('', image_data=help_b64,button_color=(sg.theme_background_color(),sg.theme_background_color()),border_width=0, key='?'),sg.Text(' '*25, key='-ERROR-')],
                     [sg.Column(col1,key='-col1-'), sg.Column(col2,key='-col2-'), sg.VerticalSeparator(), sg.Column(col3,key='-col3-')], 
                     [sg.Text('')] 
                     ])
