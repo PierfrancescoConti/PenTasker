@@ -33,7 +33,8 @@ class Gui:
         col2 = [[sg.Text('Exploitation:', font=('Helvetica',13,'bold'))],
                [sg.Text('->'),sg.Checkbox(' DirSearch', size=(9,1),default=True, key='-tool5-')],
                [sg.Text('->'),sg.Checkbox(' Sqlmap', size=(9,1),default=True, key='-tool6-')],
-               [sg.Text('->'),sg.Checkbox(' Tool8', size=(9,1),default=True, key='-tool8-')],
+               [sg.Text('->'),sg.Checkbox(' RHsecapi', size=(9,1),default=True, key='-tool8-')],
+               [sg.Text('->'),sg.Checkbox(' IIS Shortname Scanner', size=(9,1),default=True, key='-tool9-')],
                [sg.Text('->'),sg.Checkbox(' Custom', size=(9,1), key='-custom-')]
                ]
 
@@ -73,6 +74,9 @@ class Gui2():
             out = out.replace("[0m","")
             out = out.replace("[1m","")
             out = out.replace("[7m","")
+            out = out.replace("[33m","")
+            out = out.replace("[35m","")
+            out = out.replace("[36m","")
             for i in range(0,100):
                 out = out.replace("["+str(i)+";1m","")
                 out = out.replace("["+str(i)+";0m","")

@@ -59,12 +59,71 @@ def isANint(s):
 
 def get_ports(output0):
     ports=[]
+    services=[]
     out=output0.split('\n')
     for line in out:
         p=line.split('/')[0]
         if isANint(p):
             ports.append(p)
-    return ports
+            s=line.split(' ')[-1]
+            if "http-" in s:
+                s="http"
+            services.append(s)
+        
+    return ports, services
+
+# Return 1 if v2 is smaller, 
+# -1 if v1 is smaller,, 
+# 0 if equal 
+def versionCompare(v1, v2): 
+
+      
+    # This will split both the versions by '.' 
+    arr1 = v1.split(".")  
+    arr2 = v2.split(".")  
+
+    n = len(arr1) 
+    m = len(arr2) 
+      
+    # converts to integer from string 
+    arr1 = [int(i) for i in arr1] 
+    arr2 = [int(i) for i in arr2] 
+   
+    # compares which list is bigger and fills  
+    # smaller list with zero (for unequal delimeters) 
+    if n>m: 
+      for i in range(m, n): 
+         arr2.append(0) 
+    elif m>n: 
+      for i in range(n, m): 
+         arr1.append(0) 
+      
+    # returns 1 if version 1 is bigger and -1 if 
+    # version 2 is bigger and 0 if equal 
+    for i in range(len(arr1)): 
+      if arr1[i]>arr2[i]: 
+         return 1
+      elif arr2[i]>arr1[i]: 
+         return -1
+    return 0
+
+
+# returns most critical CVE in retlist
+def getbest(retlist):       
+    for lobj in retlist:
+        if "SEVERITY : Critical" in lobj:
+            return lobj.split("\n")[0].strip()+" (Critical)\n"
+    for lobj in retlist:
+        if "SEVERITY : Important" in lobj:
+            return lobj.split("\n")[0].strip()+" (High)\n"
+    for lobj in retlist:
+        if "SEVERITY : Moderate" in lobj:
+            return lobj.split("\n")[0].strip()+" (Moderate)\n"
+    for lobj in retlist:
+        if "SEVERITY : Low" in lobj:
+            return lobj.split("\n")[0].strip()+" (Low)\n"
+
+
 
 
 
@@ -76,7 +135,7 @@ def call_nikto(values, ip_addr, port, diz, verbose):
         print("ERROR!")
     output = clean_out_nikto(output)
     data={
-        'tool':'Nikto',
+        'tool':'Nikto - '+port,
         'output':output
     }
     diz["tabs"].append(data)
@@ -109,13 +168,14 @@ def call_vulscan(values, ip_addr, ports,diz,verbose):
         print('\033[44;1m   VulScan - completed                                                        \033[0m\n')
 
 
-def call_testssl(values, ip_addr, num_threads,diz,verbose):
+def call_testssl(values, ip_addr, p, num_threads,diz,verbose):
+    ip_addr+=p
     output, error=task_testssl(values, ip_addr, num_threads)
     output=output.decode()
     if error!=None:
         print("ERROR!")
     data={
-        'tool':'TestSSL.sh',
+        'tool':'TestSSL.sh - '+p,
         'output':output
     }
     diz["tabs"].append(data)
@@ -134,12 +194,8 @@ def call_dirsearch(values, url, num_threads,diz,verbose):
     output=output.decode()
     if error!=None:
         print("ERROR!")
-    output = clean_out_dirsearch(output)
-    data={
-        'tool':'DirSearch',
-        'output':output
-    }
-    diz["tabs"].append(data)
+    output, fpath = clean_out_dirsearch(output)
+    
     if verbose:
         print('\033[44;1m   DirSearch                                                                  \033[0m\n')
         print(output)
@@ -147,16 +203,21 @@ def call_dirsearch(values, url, num_threads,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   DirSearch - completed                                                      \033[0m\n')
+    data={
+        'tool':'DirSearch',
+        'output':open(fpath,'r').read()         # GET file from Output File
+    }
+    diz["tabs"].append(data)
 
 
-def call_literesph(url,diz,verbose):
-    output, error=task_literesph(url)
+def call_literesph(url,p,diz,verbose):
+    output, error=task_literesph(url,p)
     output=output.decode()
     if error!=None:
         print("ERROR!")
     #output = clean_out_literesph(output)       # output too perfect, no need to clean
     data={
-        'tool':'LiteRespH',
+        'tool':'LiteRespH - '+p,
         'output':output
     }
     diz["tabs"].append(data)
@@ -167,6 +228,26 @@ def call_literesph(url,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   LiteRespH - completed                                                      \033[0m\n')
+    
+
+def call_rhsecapi(product,version,diz,verbose):
+    output, error=task_rhsecapi(product)
+    output=output.decode()
+    if error!=None:
+        print("ERROR!")
+    output = clean_out_rhsecapi(output, product, version)
+    data={
+        'tool':'RHsecapi - '+ product,
+        'output':output
+    }
+    diz["tabs"].append(data)
+    if verbose:
+        print('\033[44;1m   RHsecapi                                                                   \033[0m\n')
+        print(output)
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   RHsecapi - completed                                                       \033[0m\n')
 
 
 
@@ -178,14 +259,14 @@ def task_nslookup(values, url):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
-def task_nmap(values, ip_addr, ports):
+def task_nmap(values, ip_addr, ports, services):
     if values['-RADIO1-']:          # Fast
         if len(ports)==0:
             bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " "+ip_addr
             process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
             output, error = process.communicate()
             output=output.decode("UTF-8")
-            ports = get_ports(output)
+            ports,services = get_ports(output)
 
         if len(ports)==0:
             print("\033[31;1mNo ports detected... Maybe the host is down.\033[0m ")
@@ -221,7 +302,7 @@ def task_nmap(values, ip_addr, ports):
             output, error =  process.communicate()
             output=output.decode("UTF-8")
 
-    return output, ports
+    return output, ports, services
 
 
 
@@ -252,8 +333,13 @@ def task_testssl(values, ip_addr, num_threads):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
-def task_literesph(url):
-    bashCommand = "python3 tools/LiteRespH/literesph.py " + url
+def task_literesph(url,p):
+    bashCommand = "python3 tools/LiteRespH/literesph.py " + url+":"+p
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    return process.communicate()
+
+def task_rhsecapi(product):
+    bashCommand = "./tools/rhsecapi/rhsecapi.py  --q-package " + product + " --extract-cves -f severity,cvss,upstream_fix,details"
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
@@ -333,18 +419,67 @@ def clean_out_dirsearch(output):
     ret=''
     x=False
     for line in out:
-        if 'Extensions:' in line:
+        if 'Output' in line:
+            fpath=line.split(":")[1].strip()
+        elif 'Extensions:' in line:
             x=True
             ret+=line + '\n'
         elif 'Error Log:' in line or 'Output File:' in line or '] 400 - ' in line or '] 401 - ' in line or '] 402 - ' in line or '] 403 - ' in line or '] 404 - ' in line or x==False:
             continue
         else:
             ret+=line + '\n'
-    return ret
+    return ret, fpath
 
 def clean_out_literesph(output):               # output too perfect, no need to clean
     return output
 
+def clean_out_rhsecapi(output, product, version):
+    cves=''
+    best=''
+    out=output.split('\n\n')[1:]
+    retlist=[]
+    x=False
+    for obj in out:
+        lobj=obj.split("\n")
+        for line in lobj:
+            if "UPSTREAM_FIX" in line:
+                tok=line.split(" ")
+                x=False
+                for t in tok:
+                    if product.lower() in t.lower():
+                        x=True
+                    regexp = re.compile(r'\d+(\.\d+)+')
+                    if regexp.search(t) and x:
+                        v1=version
+                        v2=t.strip()
+                        for letter in 'QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm,;:][-_ ':
+                            v1=v1.replace(letter,'')
+                            v2=v2.replace(letter,'')
+                        v1=v1.strip(".")
+                        v2=v2.strip(".")
+                        a=versionCompare(v1,v2)    
+                        if a==0 or a==-1:
+                            retlist.append(obj)
+                            break
+                        else:
+                            x=False
+
+
+    if retlist==[]: retlist.append("No CVEs found for given product.")
+    else:
+        best=getbest(retlist)
+        for lobj in retlist:
+            l=lobj.split("\n")
+            for line in l:
+                if "CVE" in line and "  " not in line :
+                    cves+=line.strip()+", "
+        
+
+    ret="\033[32;1m"+product+"/"+version+"\033[0m: "+best+cves[:-2]+"\n\n"
+    for e in retlist:
+        ret+=e+"\n\n"
+        
+    return ret
 
 
 
@@ -428,6 +563,7 @@ def tasks(values, url, verbose):
     threads=[]
     port = '0'
     ports = []
+    services = []
     num_threads=values['-THREADS-']
     fname=strftime("%Y-%m-%d %H:%M:%S", gmtime())+".ptsk"
     if not path.exists('projects'):
@@ -492,7 +628,7 @@ def tasks(values, url, verbose):
     ##################################################################
     ##################################################################
     if values['-tool1-']==True:                       # nmap
-        output, ports=task_nmap(values, ip_addr, ports)
+        output, ports, services=task_nmap(values, ip_addr, ports, services)
         if len(ports)==0:
             return
         #output=output.decode("utf-8")
@@ -519,9 +655,11 @@ def tasks(values, url, verbose):
     ##################################################################
     ##################################################################
     if values['-tool2-']==True:                       # nikto
-        process = Thread(target=call_nikto, args=[values, ip_addr, port, diz])  
-        process.start()
-        threads.append(process)
+        for i in range(0,len(services)):
+            if "http" in services[i]:
+                process = Thread(target=call_nikto, args=[values, ip_addr, ports[i], diz, verbose])  
+                process.start()
+                threads.append(process)
 
         
     else:
@@ -545,10 +683,11 @@ def tasks(values, url, verbose):
     ##################################################################
     ##################################################################
     if values['-tool4-']==True:                       # testssl.sh
-
-        process = Thread(target=call_testssl, args=[values, ip_addr, num_threads,diz, verbose])  
-        process.start()
-        threads.append(process)
+        for i in range(0,len(services)):
+            if "https" in services[i]:
+                process = Thread(target=call_testssl, args=[values, ip_addr, ports[i], num_threads,diz, verbose])  
+                process.start()
+                threads.append(process)
 
         
     else:
@@ -575,15 +714,63 @@ def tasks(values, url, verbose):
     ##################################################################
     if values['-tool7-']==True:                       # literesph
 
-        
-        process = Thread(target=call_literesph, args=[url,diz,verbose])  
-        process.start()
-        threads.append(process)
-
+        for i in range(0,len(services)):
+            if "http" in services[i]:
+                process = Thread(target=call_literesph, args=[ip_addr,ports[i],diz,verbose])  
+                process.start()
+                threads.append(process)
         
     else:
         if verbose:
             print('\033[47;1m\033[34;1m   LiteRespH                                                                  \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
+    ##################################################################
+    ##################################################################
+    if values['-tool8-']==True:                       # rhsecapi
+        
+        for i in range(0,len(services)):
+            if "http" in services[i]:
+                bashCommand = "curl  --connect-timeout 2 -s -I -i " + url + ":" + ports[i]
+                process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+                lrh,err = process.communicate()
+                softlist=[]
+
+                out=lrh.decode().split('\n')
+                for line in out:
+                    if 'Server:'.lower() in line.lower() or 'Powered-By:'.lower() in line.lower():
+                        soft=line.split(":")[1].strip()
+                        regexp = re.compile(r'\d+(\.\d+)+')
+                        if regexp.search(soft):
+                            l=soft.split(" ")
+                            for e in l:
+                                if '/' in e:
+                                    product=e.split("/")[0].strip()
+                                    version=e.split("/")[1].strip()
+                                    softlist.append((product,version))
+
+
+                    elif 'AspNet:'.lower() in line.lower():
+                        product="AspNet"
+                        version==line.split(":")[1].strip()
+                        softlist.append((product,version))
+                    elif 'MicrosoftSharePointTeamServices:'.lower() in line.lower():
+                        product="SharePoint"
+                        version==line.split(":")[1].strip()
+                        softlist.append((product,version))
+                    else:
+                        continue
+                    
+                if softlist!=[]:
+                    for e in softlist:
+                        process = Thread(target=call_rhsecapi, args=[e[0],e[1],diz,verbose])  
+                        process.start()
+                        threads.append(process)
+
+        
+    else:
+        if verbose:
+            print('\033[47;1m\033[34;1m   RHsecapi                                                                   \033[0m\n')
             print('\033[47;1m                                                                              \033[0m')
             print('------------------------------------------------------------------------------')
     ##################################################################
