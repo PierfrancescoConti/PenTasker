@@ -34,7 +34,7 @@ class Gui:
                [sg.Text('->'),sg.Checkbox(' DirSearch', size=(9,1),default=True, key='-tool5-')],
                [sg.Text('->'),sg.Checkbox(' Sqlmap', size=(9,1),default=True, key='-tool6-')],
                [sg.Text('->'),sg.Checkbox(' RHsecapi', size=(9,1),default=True, key='-tool8-')],
-               [sg.Text('->'),sg.Checkbox(' IIS Shortname Scanner', size=(9,1),default=True, key='-tool9-')],
+               [sg.Text('->'),sg.Checkbox(' IIS SS', size=(9,1),default=True, key='-tool9-')],
                [sg.Text('->'),sg.Checkbox(' Custom', size=(9,1), key='-custom-')]
                ]
 
@@ -77,6 +77,7 @@ class Gui2():
             out = out.replace("[33m","")
             out = out.replace("[35m","")
             out = out.replace("[36m","")
+            out = out.replace("\\x0D","")
             for i in range(0,100):
                 out = out.replace("["+str(i)+";1m","")
                 out = out.replace("["+str(i)+";0m","")
@@ -91,18 +92,21 @@ class Gui2():
         
         data=json.loads(f.read())
 
-        
-        tabs = []
-        
+        tabsX = []
         for X in data['tabs']:
-            out=no_colors(X['output'])
-            tab=sg.Tab(layout=[[sg.Multiline("\n  "+out.replace("\n","\n  "),background_color="white",text_color="black",pad=(0,0), size=(150,40), disabled=True)],],title=X['tool'], background_color="white", pad=(20,20))
-            tabs.append(tab)
-
+            tabs = []
+            tabname=X['tool']
+            for Y in X['output']: # port=Y[0] , output=Y[1] 
+                port=Y[0]
+                out=no_colors(Y[1])
+                tab=sg.Tab(layout=[[sg.Multiline("\n  "+out.replace("\n","\n  "),background_color="white",text_color="black",pad=(0,0), size=(190,45), disabled=True)],],title=port, background_color="white", pad=(20,20))
+                tabs.append(tab)
+            tabX=sg.Tab(layout=[[sg.TabGroup([ tabs ])],],title=tabname, pad=(20,20))
+            tabsX.append(tabX)
         
 
                
-        layout2 = [[sg.TabGroup([ tabs ])],
+        layout2 = [[sg.TabGroup([ tabsX ])],
               [sg.Button('Close')]]
 
         self.window=sg.Window('PTSK Project', layout2, element_justification='c', font=("Helvetica", 12),icon='Images/PenTasker-icon.png')

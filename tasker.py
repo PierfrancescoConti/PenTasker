@@ -134,11 +134,18 @@ def call_nikto(values, ip_addr, port, diz, verbose):
     if error!=None:
         print("ERROR!")
     output = clean_out_nikto(output)
-    data={
-        'tool':'Nikto - '+port,
-        'output':output
-    }
-    diz["tabs"].append(data)
+    x=False
+    for X in diz["tabs"]:
+        if X['tool']=='Nikto':
+            x=True
+            X['output'].append((str(port),output))
+            break
+    if x==False:
+        data={
+            'tool':'Nikto',
+            'output':[(str(port),output)]
+        }
+        diz["tabs"].append(data)
     if verbose:
         print('\033[44;1m   Nikto                                                                      \033[0m\n')
         print(output)
@@ -156,12 +163,12 @@ def call_vulscan(values, ip_addr, ports,diz,verbose):
     output = clean_out_vulscan(output)
     data={
         'tool':'VulScan',
-        'output':output
+        'output': [("General", output)]
     }
     diz["tabs"].append(data)
     if verbose:
         print('\033[44;1m   VulScan                                                                    \033[0m\n')
-        print(output)
+        print("\nResults collected inside the project file.\n")
         print('\033[44;1m                                                                              \033[0m')
         print('------------------------------------------------------------------------------')
     else:
@@ -174,11 +181,20 @@ def call_testssl(values, ip_addr, p, num_threads,diz,verbose):
     output=output.decode()
     if error!=None:
         print("ERROR!")
-    data={
-        'tool':'TestSSL.sh - '+p,
-        'output':output
-    }
-    diz["tabs"].append(data)
+    
+    x=False
+    for X in diz["tabs"]:
+        if X['tool']=='TestSSL.sh':
+            x=True
+            X['output'].append((str(p),output))
+            break
+    if x==False:
+        data={
+            'tool':'TestSSL.sh',
+            'output':[(str(p),output)]
+        }
+        diz["tabs"].append(data)
+
     output = clean_out_testssl(output)
     if verbose:
         print('\033[44;1m   TestSSL.sh                                                                 \033[0m\n')
@@ -189,13 +205,12 @@ def call_testssl(values, ip_addr, p, num_threads,diz,verbose):
         print('\033[44;1m   TestSSL.sh - completed                                                     \033[0m\n')
 
 
-def call_dirsearch(values, url, num_threads,diz,verbose):
-    output, error=task_dirsearch(values, url, num_threads)
+def call_dirsearch(values, url, p, num_threads,diz,verbose):       # TODO: add http
+    output, error=task_dirsearch(values, url, p, num_threads)
     output=output.decode()
     if error!=None:
         print("ERROR!")
-    output, fpath = clean_out_dirsearch(output)
-    
+    output, fpath = clean_out_dirsearch(output)    
     if verbose:
         print('\033[44;1m   DirSearch                                                                  \033[0m\n')
         print(output)
@@ -203,11 +218,19 @@ def call_dirsearch(values, url, num_threads,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   DirSearch - completed                                                      \033[0m\n')
-    data={
-        'tool':'DirSearch',
-        'output':open(fpath,'r').read()         # GET file from Output File
-    }
-    diz["tabs"].append(data)
+
+    x=False
+    for X in diz["tabs"]:
+        if X['tool']=='DirSearch':
+            x=True
+            X['output'].append((str(p),open(fpath,'r').read()))
+            break
+    if x==False:
+        data={
+            'tool':'DirSearch',
+            'output':[(str(p),open(fpath,'r').read())]
+        }
+        diz["tabs"].append(data)
 
 
 def call_literesph(url,p,diz,verbose):
@@ -216,11 +239,19 @@ def call_literesph(url,p,diz,verbose):
     if error!=None:
         print("ERROR!")
     #output = clean_out_literesph(output)       # output too perfect, no need to clean
-    data={
-        'tool':'LiteRespH - '+p,
-        'output':output
-    }
-    diz["tabs"].append(data)
+    x=False
+    for X in diz["tabs"]:
+        if X['tool']=='LiteRespH':
+            x=True
+            X['output'].append((str(p),output))
+            break
+    if x==False:
+        data={
+            'tool':'LiteRespH',
+            'output':[(str(p),output)]
+        }
+        diz["tabs"].append(data)
+    
     if verbose:
         print('\033[44;1m   LiteRespH                                                                  \033[0m\n')
         print(output)
@@ -236,11 +267,18 @@ def call_rhsecapi(product,version,diz,verbose):
     if error!=None:
         print("ERROR!")
     output = clean_out_rhsecapi(output, product, version)
-    data={
-        'tool':'RHsecapi - '+ product,
-        'output':output
-    }
-    diz["tabs"].append(data)
+    x=False
+    for X in diz["tabs"]:
+        if X['tool']=='RHsecapi':
+            x=True
+            X['output'].append((product,output))
+            break
+    if x==False:
+        data={
+            'tool':'RHsecapi',
+            'output':[(product,output)]
+        }
+        diz["tabs"].append(data)
     if verbose:
         print('\033[44;1m   RHsecapi                                                                   \033[0m\n')
         print(output)
@@ -250,6 +288,32 @@ def call_rhsecapi(product,version,diz,verbose):
         print('\033[44;1m   RHsecapi - completed                                                       \033[0m\n')
 
 
+def call_iis_ss(url,p,diz,verbose):
+    output, error=task_iis_ss(url,p)
+    output=output.decode()
+    if error!=None:
+        print("ERROR!")
+    output = clean_out_iis_ss(output)
+
+    x=False
+    for X in diz["tabs"]:
+        if X['tool']=='IIS Shortname Scanner':
+            x=True
+            X['output'].append((str(p),output))
+            break
+    if x==False:
+        data={
+            'tool':'IIS Shortname Scanner',
+            'output':[(str(p),output)]
+        }
+        diz["tabs"].append(data)
+    if verbose:
+        print('\033[44;1m   IIS Shortname Scanner                                                      \033[0m\n')
+        print(output)
+        print('\033[44;1m                                                                              \033[0m')
+        print('------------------------------------------------------------------------------')
+    else:
+        print('\033[44;1m   IIS Shortname Scanner - completed                                          \033[0m\n')
 
 
 
@@ -323,8 +387,8 @@ def task_vulscan(values, ip_addr, ports):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
-def task_dirsearch(values, url, num_threads):
-    bashCommand = "python3 tools/dirsearch/dirsearch.py -u " + url + " -e ,html,txt,php,aspx -t " + str(num_threads)
+def task_dirsearch(values, url, p, num_threads):
+    bashCommand = "python3 tools/dirsearch/dirsearch.py -u http://" + url + ":"+p+" -e ,html,txt,php,aspx -t " + str(num_threads)
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
@@ -340,6 +404,11 @@ def task_literesph(url,p):
 
 def task_rhsecapi(product):
     bashCommand = "./tools/rhsecapi/rhsecapi.py  --q-package " + product + " --extract-cves -f severity,cvss,upstream_fix,details"
+    process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+    return process.communicate()
+
+def task_iis_ss(url,p):
+    bashCommand = "java -jar tools/IIS-ShortName-Scanner/iis_shortname_scanner.jar " + url + ":" + p + " tools/IIS-ShortName-Scanner/config.xml"
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
@@ -418,6 +487,7 @@ def clean_out_dirsearch(output):
     out=output.split('\n')
     ret=''
     x=False
+    fpath=''
     for line in out:
         if 'Output' in line:
             fpath=line.split(":")[1].strip()
@@ -478,9 +548,18 @@ def clean_out_rhsecapi(output, product, version):
     ret="\033[32;1m"+product+"/"+version+"\033[0m: "+best+cves[:-2]+"\n\n"
     for e in retlist:
         ret+=e+"\n\n"
-        
     return ret
 
+def clean_out_iis_ss(output):               # output too perfect, no need to clean
+    out=output.split('\n')
+    ret=''
+    x=False
+    for line in out:
+        if '# IIS Short Name (8.3) Scanner' in line:
+            continue
+        else:
+            ret+=line + '\n'
+    return ret
 
 
 
@@ -565,7 +644,7 @@ def tasks(values, url, verbose):
     ports = []
     services = []
     num_threads=values['-THREADS-']
-    fname=strftime("%Y-%m-%d %H:%M:%S", gmtime())+".ptsk"
+    fname=strftime("%Y-%m-%d %H:%M:%S", gmtime())+"---"+ url.split('/')[0] +".ptsk"
     if not path.exists('projects'):
         makedirs('projects')
     f=open("projects/"+fname, 'w', encoding='utf-8')
@@ -604,7 +683,7 @@ def tasks(values, url, verbose):
     output, ip_addr, domain = clean_out_nslookup(output,isAip,ip_addr)
     data={
         'tool':'NsLookup',
-        'output':output
+        'output': [("General", output)]
     }
     diz["tabs"].append(data)
 
@@ -637,7 +716,7 @@ def tasks(values, url, verbose):
         output = clean_out_nmap(output)
         data={
             'tool':'Nmap',
-            'output':output
+            'output': [("General", output)]
         }
         diz["tabs"].append(data)
         if verbose:
@@ -699,10 +778,11 @@ def tasks(values, url, verbose):
     ##################################################################
     if values['-tool5-']==True:                       # dirsearch
 
-        
-        process = Thread(target=call_dirsearch, args=[values, url, num_threads,diz, verbose])  
-        process.start()
-        threads.append(process)
+        for i in range(0,len(services)):
+            if "http" in services[i]:
+                process = Thread(target=call_dirsearch, args=[values, url, ports[i], num_threads,diz, verbose])  
+                process.start()
+                threads.append(process)
 
         
     else:
@@ -775,6 +855,21 @@ def tasks(values, url, verbose):
             print('------------------------------------------------------------------------------')
     ##################################################################
     ##################################################################
+    if values['-tool9-']==True:                       # iis-shortname-scanner
+
+        for i in range(0,len(services)):
+            if "http" in services[i]:
+                process = Thread(target=call_iis_ss, args=[ip_addr,ports[i],diz,verbose])  
+                process.start()
+                threads.append(process)
+        
+    else:
+        if verbose:
+            print('\033[47;1m\033[34;1m   IIS Shortname Scanner                                                      \033[0m\n')
+            print('\033[47;1m                                                                              \033[0m')
+            print('------------------------------------------------------------------------------')
+    ##################################################################
+    ##################################################################
     if values['-custom-']==True:                       # custom
 
         
@@ -817,10 +912,10 @@ while True:
         win.close()
         exit(0)
     if event == "Select all":  
-        for x in range(0,9):
+        for x in range(0,10):
             win.FindElement('-tool{}-'.format(x)).Update(True)
     if event == "Deselect all":  
-        for x in range(2,9):
+        for x in range(2,10):
             win.FindElement('-tool{}-'.format(x)).Update(False)
     if event == "?":  
         sg.Popup(help_message,title="Help message")
