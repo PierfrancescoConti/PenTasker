@@ -21,7 +21,7 @@ python3 -m pip install -r requirements.txt
 Setup tools:
 ```
 chmod +x setup.sh
-./setup.sh
+./setup.sh      # hint: don't execute this as root
 ```
 <hr>
 
@@ -29,7 +29,7 @@ chmod +x setup.sh
 ### Execution
 Execute this and a GUI will prompt out:
 ```
-python3 tasker.py
+python3 pentasker.py
 ```
 <br>
 
