@@ -1,6 +1,10 @@
 from docx import *
-from pathlib import Path
 from docx.shared import *
+from pathlib import Path
+from os import system, name, path, makedirs, getuid, listdir
+from os.path import isfile, join
+import subprocess
+
 
 class Reporter():
     def __init__(self, name, host, ports, services, tabs):
@@ -9,6 +13,13 @@ class Reporter():
         self.ports = ports
         self.services = services
         self.tabs = tabs
+
+    def check_line(self, s1, s2, lines):
+     for line in lines:
+         if s1 in line and s2 in line:
+             return True
+     return False
+
 
     def find_in_par(self, txt,doc):               # FIND paragraph containing some txt
         for paragraph in doc.paragraphs:
@@ -31,6 +42,15 @@ class Reporter():
                 return i-1
         return -1
         
+    def valid_xml_char_ordinal(self, c):
+        codepoint = ord(c)
+        # conditions ordered by presumed frequency
+        return (
+            0x20 <= codepoint <= 0xD7FF or
+            codepoint in (0x9, 0xA, 0xD) or
+            0xE000 <= codepoint <= 0xFFFD or
+            0x10000 <= codepoint <= 0x10FFFF
+            )
 
 
     def delete_paragraph(self, paragraph):        # DELETE chosen paragraph
@@ -44,8 +64,9 @@ class Reporter():
     def merge_docs(self, files):          # MERGE documents # files is a list of documents to merge
         merged_document = Document()
 
-        for index, file in enumerate(files):
-            sub_doc = Document(file)
+
+        for index, f in enumerate(files):
+            sub_doc = Document(f)
 
             # Don't add a page break if you've reached the last file.
             if index < len(files)-1:
@@ -63,7 +84,7 @@ class Reporter():
         par=d.paragraphs[ind]
 
         for element in sub_doc.element.body:
-            par.add_run(element)
+            par.element.body.append(element)
 
         return d
 
@@ -148,24 +169,29 @@ class Reporter():
         for o in RHouts:
             if i==0:
                 # modify current doc
+                ou=o[1].strip()
+                ou = ''.join(c for c in ou if self.valid_xml_char_ordinal(c))
                 i=1
-                first=o.split("\n")[0]
-                second=o.split("\n")[1]
+                first=ou.split("\n")[0]
+                print("first: "+first)    # DEBUG
+                second=ou.split("\n")[1]
+                print("second: "+second)    # DEBUG
 
                 par=self.find_in_par("SoftwareName",doc)
-                par.text=first.split("/")[0]
+                print("DEBUG: "+first.split("/")[0])    # DEBUG
+                par.text=par.text.replace("SoftwareName",first.split("/")[0])
 
-                par=self.find_in_par("2.4.29",doc)
-                par.text=first.split("/")[1].split(":")[0]
+                #par=self.find_in_par("2.4.29",doc)
+                par.text=par.text.replace("2.4.29",first.split("/")[1].split(":")[0])
 
-                par=self.find_second_in_par("HIGH",doc)
-                par.text=first[first.find("(")+1:first.find(")")].upper()
+                #par=self.find_second_in_par("HIGH",doc)
+                par.text=par.text.replace("HIGH",first[first.find("(")+1:first.find(")")].upper())
 
-                par=self.find_in_par("(CVE-2019-0211)",doc)
-                par.text=first[first.find(":")+1:first.find("(")].upper()
+                #par=self.find_in_par("(CVE-2019-0211)",doc)
+                par.text=par.text.replace("(CVE-2019-0211)","("+first[first.find(":")+1:first.find("(")].upper()+")")
 
-                par=self.find_in_par("CVE-2017-15710…",doc)
-                par.text=second
+                #par=self.find_in_par("CVE-2017-15710…",doc)
+                par.text=par.text.replace("CVE-2017-15710…",second)
 
                 if LRHouts == []:
                     par=self.find_in_par("The next Box shows the evidence of the software component version in the response header.",doc)
@@ -194,26 +220,33 @@ class Reporter():
                                             break                                        
                                     break
                             break
+                doc.save('Reports/Temp/3-SSAP-NU.docx')
 
             else:
                 # modify elem and append
-                first=o.split("\n")[0]
-                second=o.split("\n")[1]
+                ou=o[1].strip()
+                ou = ''.join(c for c in ou if self.valid_xml_char_ordinal(c))
+                i=1
+                first=ou.split("\n")[0]
+                print("first: "+first)    # DEBUG
+                second=ou.split("\n")[1]
+                print("second: "+second)    # DEBUG
 
                 par=self.find_in_par("SoftwareName",doc2)
-                par.text=o[0]
+                print("DEBUG: "+first.split("/")[0])    # DEBUG
+                par.text=par.text.replace("SoftwareName",first.split("/")[0])
 
-                par=self.find_in_par("2.4.29",doc2)
-                par.text=first[1].split("/")[1].split(":")[0]
+                #par=self.find_in_par("2.4.29",doc)
+                par.text=par.text.replace("2.4.29",first.split("/")[1].split(":")[0])
 
-                par=self.find_second_in_par("HIGH",doc2)
-                par.text=first[first.find("(")+1:first.find(")")].upper()
+                #par=self.find_second_in_par("HIGH",doc)
+                par.text=par.text.replace("HIGH",first[first.find("(")+1:first.find(")")].upper())
 
-                par=self.find_in_par("(CVE-2019-0211)",doc2)
-                par.text=first[first.find(":")+1:first.find("(")].upper()
+                #par=self.find_in_par("(CVE-2019-0211)",doc)
+                par.text=par.text.replace("(CVE-2019-0211)","("+first[first.find(":")+1:first.find("(")].upper()+")")
 
-                par=self.find_in_par("CVE-2017-15710…",doc2)
-                par.text=second
+                #par=self.find_in_par("CVE-2017-15710…",doc)
+                par.text=par.text.replace("CVE-2017-15710…",second)
                 
                 if LRHouts == []:
                     par=self.find_in_par("The next Box shows the evidence of the software component version in the response header.",doc2)
@@ -243,8 +276,13 @@ class Reporter():
                                     break
                             break
 
-                doc=self.merge_before_par_docs(doc,doc2)
-
+                doc2.save('Reports/Temp/doc2.docx')
+                doc = self.merge_docs(['Reports/Temp/3-SSAP-NU.docx','Reports/Temp/doc2.docx'])
+                doc.save('Reports/Temp/3-SSAP-NU.docx')
+                bashCommand = "rm Reports/Temp/doc2.docx"
+                process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+                process.communicate()
+        doc = self.merge_docs(['Reports/Temp/3-SSAP-NU.docx','Templates/SSAP-NU-SS.docx'])
         doc.save('Reports/Temp/3-SSAP-NU.docx')
         return
     
@@ -261,9 +299,9 @@ class Reporter():
         return
     
     def gen_RESPH(self, LRHouts):      # check if RESP-H is True
-        doc = Document('Templates/RESP-H.docx')
         for lrh in LRHouts:
             if "<!>" in lrh[1].lower():
+                doc = Document('Templates/RESP-H.docx')
                 for table in doc.tables:
                     if table.cell(0,0).paragraphs[0].text == 'RESPONSE https://11.22.33.44/':
                         y=False
@@ -277,23 +315,71 @@ class Reporter():
                             elif "###############################" in line:
                                 break                                        
                         break
+                doc.save('Reports/Temp/6-RESP-H.docx')
                 break
-        doc.save('Reports/Temp/6-RESP-H.docx')
         return
     
     def gen_CJKPROT(self, LRHouts):      # check if CJK-PROT is True
-        doc = Document('Templates/CJK-PROT.docx')
-        doc.save('Reports/Temp/7-CJK-PROT.docx')
+        for lrh in LRHouts:
+            if self.check_line("<!>", "X-Frame-Options", lrh[1].lower().split("\n")):       # se sono nella stessa riga
+                doc = Document('Templates/CJK-PROT.docx')
+                for table in doc.tables:
+                    if table.cell(0,0).paragraphs[0].text == 'RESPONSE':
+                        y=False
+                        table.cell(0,0).paragraphs[0].text=''
+                        for line in lrh[1].split("\n"):
+                            if "~~~" in line:
+                                table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
+                                y=True
+                            elif y==True:
+                                table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
+                            elif "###############################" in line:
+                                break                                        
+                        break
+                doc.save('Reports/Temp/7-CJK-PROT.docx')
+                break
         return
     
     def gen_SCKPROT(self, LRHouts):      # check if SCK-PROT is True
-        doc = Document('Templates/SCK-PROT.docx')
-        doc.save('Reports/Temp/8-SCK-PROT.docx')
+        for lrh in LRHouts:
+            if "<*>" in lrh[1].lower():     
+                doc = Document('Templates/SCK-PROT.docx')
+                for table in doc.tables:
+                    if table.cell(0,0).paragraphs[0].text == 'RESPONSE':
+                        y=False
+                        table.cell(0,0).paragraphs[0].text=''
+                        for line in lrh[1].split("\n"):
+                            if "~~~" in line:
+                                table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
+                                y=True
+                            elif y==True:
+                                table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
+                            elif "###############################" in line:
+                                break                                        
+                        break
+                doc.save('Reports/Temp/8-SCK-PROT.docx')
+                break      
         return
     
     def gen_INLEAK(self, LRHouts):      # check if IN-LEAK is True
-        doc = Document('Templates/IN-LEAK.docx')
-        doc.save('Reports/Temp/9-IN-LEAK.docx')
+        for lrh in LRHouts:
+            if "<?>" in lrh[1].lower():
+                doc = Document('Templates/IN-LEAK.docx')
+                for table in doc.tables:
+                    if table.cell(0,0).paragraphs[0].text == 'RESPONSE https://11.22.33.44/':
+                        y=False
+                        table.cell(0,0).paragraphs[0].text=''
+                        for line in lrh[1].split("\n"):
+                            if "~~~" in line:
+                                table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
+                                y=True
+                            elif y==True:
+                                table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
+                            elif "###############################" in line:
+                                break                                        
+                        break
+                doc.save('Reports/Temp/9-IN-LEAK.docx')
+                break        
         return
     
     def gen_TECHANN(self, ports, services):      # check if TECH-ANN is True
@@ -317,6 +403,8 @@ class Reporter():
             elif X['tool']=='TestSSL.sh':
                 TSSLouts=X['output']
 
+            self.gen_RT(LRHouts)
+
             if LRHouts != []:
                 self.gen_RESPH(LRHouts)
                 self.gen_CJKPROT(LRHouts)
@@ -335,7 +423,6 @@ class Reporter():
             if LRHouts != [] or IISouts != []:
                 self.gen_SECMISC(LRHouts, IISouts)
 
-        #
         return
 
 
@@ -343,16 +430,28 @@ class Reporter():
 
     
 
-    def generate_report(self, name, host, ports, services, tabs):
+    def generate_report(self):
         Path("Reports/Temp").mkdir(parents=True, exist_ok=True)
 
-        self.caller_gen(host, ports, services, tabs)
+        self.caller_gen(self.host, self.ports, self.services, self.tabs)
 
         files=[]
 
-        # for f in get_files(Reports/Temp/).sort():
+        mypath="Reports/Temp/"
+
+        # for f in get_files().sort():
         #   files.append(f)
 
+        bashCommand = "ls " + mypath
+        process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+        o,e = process.communicate()
+        files = [join(mypath, f) for f in o.decode().split("\n") if ".docx" in f]
+
         merged_document = self.merge_docs(files)
-        merged_document.save('Reports/'+name+'.docx')
-        return
+        path='Reports/'+self.name+'.docx'
+        merged_document.save(path)
+        for f in files:     # clean Temp
+            bashCommand = "rm " + f
+            process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
+            process.communicate()
+        return path

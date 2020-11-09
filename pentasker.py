@@ -1,12 +1,12 @@
 from GUI import Gui, Gui2
 from threading import Thread
 from protocols import * 
-from os import system, name, path, makedirs, getuid
+from reporter import * 
+from os import system, name, path, makedirs, getuid, listdir
+from os.path import isfile, join
 from glob import glob
 from tkinter import ttk
 from time import gmtime, strftime
-from os import listdir
-from os.path import isfile, join
 import subprocess
 import PySimpleGUI as sg
 import re 
@@ -141,7 +141,24 @@ def getbest(retlist):
             return lobj.split("\n")[0].strip()+" (Low)\n"
 
 
-
+def no_colors(output):
+    out = output.replace("[m","")
+    out = out.replace("[0m","")
+    out = out.replace("[1m","")
+    out = out.replace("[7m","")
+    out = out.replace("[31m","")
+    out = out.replace("[32;1m","")
+    out = out.replace("[33m","")
+    out = out.replace("[35m","")
+    out = out.replace("[36m","")
+    out = out.replace("[92m","")
+    out = out.replace("\\x0D","")
+    for i in range(0,100):
+        out = out.replace("["+str(i)+";1m","")
+        out = out.replace("["+str(i)+";0m","")
+        out = out.replace("[0;"+str(i)+"m","")
+        out = out.replace("[1;"+str(i)+"m","")
+    return out
 
 
 # Thread Calls
@@ -155,12 +172,12 @@ def call_nikto(values, ip_addr, port, diz, verbose):
     for X in diz["tabs"]:
         if X['tool']=='Nikto':
             x=True
-            X['output'].append((str(port),output))
+            X['output'].append((str(port),no_colors(output)))
             break
     if x==False:
         data={
             'tool':'Nikto',
-            'output':[(str(port),output)]
+            'output':[(str(port),no_colors(output))]
         }
         diz["tabs"].append(data)
     if verbose:
@@ -182,12 +199,12 @@ def call_vulscan(values, ip_addr, p,diz,verbose):
     for X in diz["tabs"]:
         if X['tool']=='VulScan':
             x=True
-            X['output'].append((str(p),output))
+            X['output'].append((str(p),no_colors(output)))
             break
     if x==False:
         data={
             'tool':'VulScan',
-            'output':[(str(p),output)]
+            'output':[(str(p),no_colors(output))]
         }
         diz["tabs"].append(data)
     if verbose:
@@ -210,12 +227,12 @@ def call_testssl(values, ip_addr, p, num_threads,diz,verbose):
     for X in diz["tabs"]:
         if X['tool']=='TestSSL.sh':
             x=True
-            X['output'].append((str(p),output))
+            X['output'].append((str(p),no_colors(output)))
             break
     if x==False:
         data={
             'tool':'TestSSL.sh',
-            'output':[(str(p),output)]
+            'output':[(str(p),no_colors(output))]
         }
         diz["tabs"].append(data)
 
@@ -247,12 +264,12 @@ def call_dirsearch(values, url, p, num_threads,diz,verbose):
     for X in diz["tabs"]:
         if X['tool']=='DirSearch':
             x=True
-            X['output'].append((str(p),open(fpath,'r').read()))
+            X['output'].append((str(p),no_colors(open(fpath,'r').read())))
             break
     if x==False:
         data={
             'tool':'DirSearch',
-            'output':[(str(p),open(fpath,'r').read())]
+            'output':[(str(p),no_colors(open(fpath,'r').read()))]
         }
         diz["tabs"].append(data)
 
@@ -272,7 +289,7 @@ def call_literesph(url,p,diz,verbose):
     if x==False:
         data={
             'tool':'LiteRespH',
-            'output':[(str(p),output)]
+            'output':[(str(p),no_colors(output))]
         }
         diz["tabs"].append(data)
     
@@ -295,12 +312,12 @@ def call_rhsecapi(product,version,diz,verbose):
     for X in diz["tabs"]:
         if X['tool']=='RHsecapi':
             x=True
-            X['output'].append((product,output))
+            X['output'].append((product,no_colors(output)))
             break
     if x==False:
         data={
             'tool':'RHsecapi',
-            'output':[(product,output)]
+            'output':[(product,no_colors(output))]
         }
         diz["tabs"].append(data)
     if verbose:
@@ -323,12 +340,12 @@ def call_iis_ss(url,p,diz,verbose):
     for X in diz["tabs"]:
         if X['tool']=='IIS Shortname Scanner':
             x=True
-            X['output'].append((str(p),output))
+            X['output'].append((str(p),no_colors(output)))
             break
     if x==False:
         data={
             'tool':'IIS Shortname Scanner',
-            'output':[(str(p),output)]
+            'output':[(str(p),no_colors(output))]
         }
         diz["tabs"].append(data)
     if verbose:
@@ -363,12 +380,12 @@ def call_legion(ip_addr,protocol,p,diz,verbose):
     for X in diz["tabs"]:
         if X['tool']=='Legion':
             x=True
-            X['output'].append((str(p),output))
+            X['output'].append((str(p),no_colors(output)))
             break
     if x==False:
         data={
             'tool':'Legion',
-            'output':[(str(p),output)]      # get from file
+            'output':[(str(p),no_colors(output))]      # get from file
         }
         diz["tabs"].append(data)
     if verbose:
@@ -738,10 +755,13 @@ def tasks(values, url, verbose):
     f=open("projects/"+fname, 'w', encoding='utf-8')
     diz={}
     diz["tabs"]=[]
+
     
 
 
     domain=url.split('/')[0]
+    diz["host"]=domain
+
     if ':' in domain:
         port = domain.split(':')[1]
         domain = domain.split(':')[0]
@@ -796,6 +816,9 @@ def tasks(values, url, verbose):
     ##################################################################
     if values['-tool1-']==True:                       # nmap
         output, ports, services=task_nmap(values, ip_addr, ports, services)
+        diz["ports"]=ports
+        diz["services"]=services
+
         if len(ports)==0:
             return
         #output=output.decode("utf-8")
@@ -1051,6 +1074,15 @@ while True:
             if event == sg.WIN_CLOSED or event == 'Close':	# if user closes window or clicks cancel
                 win.close()
                 exit(0)
+            if event == 'Generate\nReport':	# if user closes window or clicks cancel
+                # name, host, ports, services, tabs
+                # filename.split("/")[-1], data['host'], data['ports'], data['services'], data['tabs']
+                f=open(filename,'r', encoding='utf-8')
+                data=json.loads(f.read())
+                reporter=Reporter(filename.split("/")[-1], data['host'], data['ports'], data['services'], data['tabs'])
+                path=reporter.generate_report()
+                sg.Popup("Report correctly generated. Its location is:\n"+path,title="Done!")
+                
         break
 
         
