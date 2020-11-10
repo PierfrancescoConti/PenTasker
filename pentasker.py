@@ -421,7 +421,6 @@ def task_nmap(values, ip_addr, ports, services):
             for p in ports:
                 bashCommand+=p+','
             bashCommand=bashCommand[:-1]+' '+ip_addr
-            print(bashCommand)      # DEBUG
             print('\033[32;1mDetected ports:\033[0m '+ ', '.join(ports) +'\n')
             process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
             output, error =  process.communicate()
@@ -438,7 +437,6 @@ def task_nmap(values, ip_addr, ports, services):
         else:
             ######## RILANCIARE IL COMANDO CON -A #########
             bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -A -p "
-            print(bashCommand)      # DEBUG
             for p in ports:
                 bashCommand+=p+','
             bashCommand=bashCommand[:-1]+' '+ip_addr
@@ -464,7 +462,6 @@ def task_vulscan(values, ip_addr, ports):
     for p in ports:
         bashCommand+=p+','
     bashCommand=bashCommand[:-1]+' '+ip_addr
-    print(bashCommand)      # DEBUG
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
@@ -510,7 +507,6 @@ def clean_out_nslookup(output,isAip, ip_addr):
         out=output.split('\n\n')
         name=out[0].split('\n')[-1]
         domain=name[name.find('name = ')+7:-1]
-        #print(domain)       # DEBUG
         return out[0]+'\n', ip_addr, domain
     else:
         domain=ip_addr
@@ -766,14 +762,12 @@ def tasks(values, url, verbose):
         port = domain.split(':')[1]
         domain = domain.split(':')[0]
         
-    print(domain+' - '+port)    # DEBUG
     if port!='0':
         val=sg.PopupYesNo("\nPenTasker will focus the scan on port "+port+". \n\nThis reduces the number of requests and the execution will be faster. \n\n\tAre you sure?",
                         title="Focus on port "+port+"?",button_color=('white', 'blue'))
         if val=="Yes":
             if isANint(port):
                 ports.append(port)
-            print(val)     # DEBUG
         else:
             port='0'
     
@@ -795,7 +789,6 @@ def tasks(values, url, verbose):
     }
     diz["tabs"].append(data)
 
-    #print(domain)       # DEBUG
     if ": NXDOMA" in domain:
         domain=ip_addr
     if values['-tool0-']==True:                       # nslookup
@@ -1055,7 +1048,6 @@ while True:
             continue
         else:
             targets=open(filename).read()
-            print(targets)     # DEBUG
             win.FindElement('-URL-').Update(targets.replace("\n","§")[:-1])
 
 

@@ -36,8 +36,24 @@ class Reporter():
                 return paragraph
         return None
 
+    def clear_table(self, table):
+        i=0
+        for p in table.cell(0,0).paragraphs:
+            if i==0:
+                i=1
+            else:
+                self.delete_paragraph(p)
+        return table
+
+    def find_in_tab(self, txt,doc):               # FIND paragraph containing some txt
+        for table in doc.tables:
+            if txt in table.cell(0,0).paragraphs[1].text:
+                return table
+        return None
+
+
     def index_before_par(self, txt,doc):               # FIND paragraph containing some txt
-        for i in range(0,len(doc.paragraphs)):
+        for i in range(0,len(doc.paragraphs)-1):
             if txt in doc.paragraphs[i].text:
                 return i-1
         return -1
@@ -52,6 +68,8 @@ class Reporter():
             0x10000 <= codepoint <= 0x10FFFF
             )
 
+    def sanitize(self, s):
+        return ''.join(c for c in s if self.valid_xml_char_ordinal(c))
 
     def delete_paragraph(self, paragraph):        # DELETE chosen paragraph
         p = paragraph._element
@@ -88,15 +106,33 @@ class Reporter():
 
         return d
 
-    def gen_RT(self):
-        doc = Document('Templates/Report-Template.docx')
-        doc.save('Reports/Temp/1-Report-Template.docx')
-        return
+    def IIS_isvuln(self, IISouts):
+        if IISouts == []:
+            return None
+        for o in IISouts:
+            if "Result: Not vulnerable" not in o[1]:
+                return o
+        return None
+
+    def LRH_isvuln(self, LRHouts):
+        if LRHouts == []:
+            return None
+        for o in LRHouts:
+            if "<*>" in o[1]:
+                return o
+        return None
     
-    def gen_SECMISC(self, LRHouts, IISouts):      # check if SEC-MISC and its content is True
+    def grep(self, s,text):
+        lista=text.split("\n")
+        for l in lista:
+            if s in l:
+                return l
+        return ""
+    
+    def gen_SECMISC(self, olrh, oiis):      # check if SEC-MISC and its content is True
         doc = Document('Templates/SEC-MISC.docx')
 
-        if IISouts == []:
+        if oiis==None:
             # deleting 8.3 enum section
             par=self.find_in_par("file names supported by the HTTP service and accepted by the system:",doc)
             self.delete_paragraph(par)
@@ -122,11 +158,16 @@ class Reporter():
             par=self.find_in_par("Please note that this option does not change the files, but changes the way the NTFS file system handles and displays the files.",doc)
             self.delete_paragraph(par)
 
-            table=doc.tables[0]
-            if table.cell(0,0).paragraphs[0].text == 'java -jar iis_shortname_scanner.jar':
-                table._element.getparent().remove(table._element)
+            table=self.find_in_tab("java -jar iis_shortname_scanner.jar", doc)
+            table._element.getparent().remove(table._element)
+        else:
+            table=self.find_in_tab("java -jar iis_shortname_scanner.jar", doc)
+            table=self.clear_table(table)
+            table.cell(0,0).paragraphs[0].text=self.sanitize(oiis[1]).strip()
 
-        elif LRHouts == []:
+                
+
+        if olrh==None:
             # deleting HTTP methods section
             par=self.find_in_par("INSECURE HTTP VERBS",doc)
             self.delete_paragraph(par)
@@ -140,15 +181,18 @@ class Reporter():
             par=self.find_in_par("It is also recommended to disable the HTTP OPTIONS/PUT/DELETE/TRACE",doc)
             self.delete_paragraph(par)
 
-            for table in doc.tables:
-                if table.cell(0,0).paragraphs[0].text == 'Allow: GET, POST, OPTIONS, HEAD, MKCOL, PUT, PROPFIND, PROPPATCH, DELETE, MOVE, COPY, GETLIB, LOCK, UNLOCK':
-                    table._element.getparent().remove(table._element)
+            table=self.find_in_tab("Allow: GET, POST, OPTIONS, HEAD, MKCOL", doc)
+            table._element.getparent().remove(table._element)
+        else:
+            table=self.find_in_tab("Allow: GET, POST, OPTIONS, HEAD, MKCOL", doc)
+            table=self.clear_table(table)
+            table.cell(0,0).paragraphs[0].text=self.sanitize(self.grep("<*>",olrh[1])).strip()
 
         
         doc.save('Reports/Temp/2-SEC-MISC.docx')
         return
     
-    def gen_SSAPNU(self, RHouts, LRHouts):      # check if SSAP-NU and its content is True
+    def gen_SSAPNU(self, RHouts, LRHouts, host):      # check if SSAP-NU and its content is True
         doc = Document('Templates/SSAP-NU.docx')
         doc2 = Document('Templates/SSAP-NU-elem.docx')
         if LRHouts == []:
@@ -158,9 +202,8 @@ class Reporter():
             par=self.find_in_par(" – Leak software version: not updated",doc)
             self.delete_paragraph(par)
 
-            for table in doc.tables:
-                if table.cell(0,0).paragraphs[0].text == 'Response: https://10.72.16.13:2224/':
-                    table._element.getparent().remove(table._element)
+            table=self.find_in_tab("Response: https://10.72.16.13:2224/", doc)
+            table._element.getparent().remove(table._element)
             
         #else:
         #    for o in LRHouts:
@@ -173,15 +216,13 @@ class Reporter():
                 ou = ''.join(c for c in ou if self.valid_xml_char_ordinal(c))
                 i=1
                 first=ou.split("\n")[0]
-                print("first: "+first)    # DEBUG
                 second=ou.split("\n")[1]
-                print("second: "+second)    # DEBUG
 
                 par=self.find_in_par("SoftwareName",doc)
-                print("DEBUG: "+first.split("/")[0])    # DEBUG
                 par.text=par.text.replace("SoftwareName",first.split("/")[0])
 
                 #par=self.find_in_par("2.4.29",doc)
+                par.text=par.text.replace("104.214.239.16",host)
                 par.text=par.text.replace("2.4.29",first.split("/")[1].split(":")[0])
 
                 #par=self.find_second_in_par("HIGH",doc)
@@ -200,26 +241,16 @@ class Reporter():
                     par=self.find_in_par(" – Leak software version: not updated",doc)
                     self.delete_paragraph(par)
 
-                    for table in doc.tables:
-                        if table.cell(0,0).paragraphs[0].text == 'Response: https://10.72.16.13:2224/':
-                            table._element.getparent().remove(table._element)
+                    table=self.find_in_tab("Response: https://10.72.16.13:2224/", doc)
+                    table._element.getparent().remove(table._element)
                 else:
                     for lrh in LRHouts:
                         if first.split("/")[0] in lrh[1].lower() and first.split("/")[1].split(":")[0].strip() in lrh[1].lower():
-                            for table in doc.tables:
-                                if table.cell(0,0).paragraphs[0].text == 'Response: https://10.72.16.13:2224/':
-                                    y=False
-                                    table.cell(0,0).paragraphs[0].text=''
-                                    for line in lrh[1].split("\n"):
-                                        if "~~~" in line:
-                                            table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
-                                            y=True
-                                        elif y==True:
-                                            table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
-                                        elif "###############################" in line:
-                                            break                                        
-                                    break
+                            table=self.find_in_tab("Response: https://10.72.16.13:2224/", doc)
+                            table=self.clear_table(table)
+                            table.cell(0,0).paragraphs[0].text=self.sanitize(self.extract_head(lrh[1])).strip()                                       
                             break
+                            
                 doc.save('Reports/Temp/3-SSAP-NU.docx')
 
             else:
@@ -228,15 +259,13 @@ class Reporter():
                 ou = ''.join(c for c in ou if self.valid_xml_char_ordinal(c))
                 i=1
                 first=ou.split("\n")[0]
-                print("first: "+first)    # DEBUG
                 second=ou.split("\n")[1]
-                print("second: "+second)    # DEBUG
 
                 par=self.find_in_par("SoftwareName",doc2)
-                print("DEBUG: "+first.split("/")[0])    # DEBUG
                 par.text=par.text.replace("SoftwareName",first.split("/")[0])
 
                 #par=self.find_in_par("2.4.29",doc)
+                par.text=par.text.replace("104.214.239.16",host)
                 par.text=par.text.replace("2.4.29",first.split("/")[1].split(":")[0])
 
                 #par=self.find_second_in_par("HIGH",doc)
@@ -255,25 +284,14 @@ class Reporter():
                     par=self.find_in_par(" – Leak software version: not updated",doc2)
                     self.delete_paragraph(par)
         
-                    for table in doc2.tables:
-                        if table.cell(0,0).paragraphs[0].text == 'Response: https://10.72.16.13:2224/':
-                            table._element.getparent().remove(table._element)
+                    table=self.find_in_tab("Response: https://10.72.16.13:2224/", doc2)
+                    table._element.getparent().remove(table._element)
                 else:
                     for lrh in LRHouts:
                         if first.split("/")[0] in lrh[1].lower() and first.split("/")[1].split(":")[0].strip() in lrh[1].lower():
-                            for table in doc.tables:
-                                if table.cell(0,0).paragraphs[0].text == 'Response: https://10.72.16.13:2224/':
-                                    y=False
-                                    table.cell(0,0).paragraphs[0].text=''
-                                    for line in lrh[1].split("\n"):
-                                        if "~~~" in line:
-                                            table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
-                                            y=True
-                                        elif y==True:
-                                            table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
-                                        elif "###############################" in line:
-                                            break                                        
-                                    break
+                            table=self.find_in_tab("Response: https://10.72.16.13:2224/", doc2)
+                            table=self.clear_table(table)
+                            table.cell(0,0).paragraphs[0].text=self.sanitize(self.extract_head(lrh[1])).strip()
                             break
 
                 doc2.save('Reports/Temp/doc2.docx')
@@ -283,6 +301,7 @@ class Reporter():
                 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
                 process.communicate()
         doc = self.merge_docs(['Reports/Temp/3-SSAP-NU.docx','Templates/SSAP-NU-SS.docx'])
+        doc.add_page_break()
         doc.save('Reports/Temp/3-SSAP-NU.docx')
         return
     
@@ -302,19 +321,9 @@ class Reporter():
         for lrh in LRHouts:
             if "<!>" in lrh[1].lower():
                 doc = Document('Templates/RESP-H.docx')
-                for table in doc.tables:
-                    if table.cell(0,0).paragraphs[0].text == 'RESPONSE https://11.22.33.44/':
-                        y=False
-                        table.cell(0,0).paragraphs[0].text=''
-                        for line in lrh[1].split("\n"):
-                            if "~~~" in line:
-                                table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
-                                y=True
-                            elif y==True:
-                                table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
-                            elif "###############################" in line:
-                                break                                        
-                        break
+                table=self.find_in_tab('RESPONSE https://11.22.33.44/', doc)
+                table=self.clear_table(table)
+                table.cell(0,0).paragraphs[0].text=self.sanitize(self.extract_head(lrh[1])).strip()
                 doc.save('Reports/Temp/6-RESP-H.docx')
                 break
         return
@@ -323,19 +332,9 @@ class Reporter():
         for lrh in LRHouts:
             if self.check_line("<!>", "X-Frame-Options", lrh[1].lower().split("\n")):       # se sono nella stessa riga
                 doc = Document('Templates/CJK-PROT.docx')
-                for table in doc.tables:
-                    if table.cell(0,0).paragraphs[0].text == 'RESPONSE':
-                        y=False
-                        table.cell(0,0).paragraphs[0].text=''
-                        for line in lrh[1].split("\n"):
-                            if "~~~" in line:
-                                table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
-                                y=True
-                            elif y==True:
-                                table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
-                            elif "###############################" in line:
-                                break                                        
-                        break
+                table=self.find_in_tab('RESPONSE', doc)
+                table=self.clear_table(table)
+                table.cell(0,0).paragraphs[0].text=self.sanitize(self.extract_head(lrh[1])).strip()                                 
                 doc.save('Reports/Temp/7-CJK-PROT.docx')
                 break
         return
@@ -344,19 +343,9 @@ class Reporter():
         for lrh in LRHouts:
             if "<*>" in lrh[1].lower():     
                 doc = Document('Templates/SCK-PROT.docx')
-                for table in doc.tables:
-                    if table.cell(0,0).paragraphs[0].text == 'RESPONSE':
-                        y=False
-                        table.cell(0,0).paragraphs[0].text=''
-                        for line in lrh[1].split("\n"):
-                            if "~~~" in line:
-                                table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
-                                y=True
-                            elif y==True:
-                                table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
-                            elif "###############################" in line:
-                                break                                        
-                        break
+                table=self.find_in_tab('RESPONSE', doc)
+                table=self.clear_table(table)
+                table.cell(0,0).paragraphs[0].text=self.sanitize(self.extract_head(lrh[1])).strip()
                 doc.save('Reports/Temp/8-SCK-PROT.docx')
                 break      
         return
@@ -365,22 +354,25 @@ class Reporter():
         for lrh in LRHouts:
             if "<?>" in lrh[1].lower():
                 doc = Document('Templates/IN-LEAK.docx')
-                for table in doc.tables:
-                    if table.cell(0,0).paragraphs[0].text == 'RESPONSE https://11.22.33.44/':
-                        y=False
-                        table.cell(0,0).paragraphs[0].text=''
-                        for line in lrh[1].split("\n"):
-                            if "~~~" in line:
-                                table.cell(0,0).paragraphs[0].text+=line.strip().strip("~~~").strip()
-                                y=True
-                            elif y==True:
-                                table.cell(0,0).paragraphs[0].text+=line.strip()+"\n"
-                            elif "###############################" in line:
-                                break                                        
-                        break
+                table=self.find_in_tab('RESPONSE https://11.22.33.44/', doc)
+                table=self.clear_table(table)
+                table.cell(0,0).paragraphs[0].text=self.sanitize(self.extract_head(lrh[1])).strip()
                 doc.save('Reports/Temp/9-IN-LEAK.docx')
                 break        
         return
+
+    def extract_head(self,out):
+        ret=''
+        y=False
+        for line in out.split("\n"):
+            if "###############################" in line:
+                break
+            if "~~~" in line:
+                ret+=self.sanitize(line).strip().strip("~~~").strip()
+                y=True
+            elif y==True:
+                ret+=self.sanitize(line).strip()+"\n"
+        return ret
     
     def gen_TECHANN(self, ports, services):      # check if TECH-ANN is True
         doc = Document('Templates/TECH-ANN.docx')
@@ -403,7 +395,6 @@ class Reporter():
             elif X['tool']=='TestSSL.sh':
                 TSSLouts=X['output']
 
-            self.gen_RT(LRHouts)
 
             if LRHouts != []:
                 self.gen_RESPH(LRHouts)
@@ -412,21 +403,21 @@ class Reporter():
                 self.gen_INLEAK(LRHouts)
             
             if RHouts != []:
-                self.gen_SSAPNU(RHouts,LRHouts)
+                self.gen_SSAPNU(RHouts,LRHouts, host)
 
             if TSSLouts != []:
                 self.gen_CRYPWK(TSSLouts)
 
             if "http" in services:
                 self.gen_NOCRYPTT(ports, services)
+
+            oiis=self.IIS_isvuln(IISouts)
+            olrh=self.LRH_isvuln(LRHouts)
             
-            if LRHouts != [] or IISouts != []:
-                self.gen_SECMISC(LRHouts, IISouts)
+            if oiis!=None or olrh!=None:
+                self.gen_SECMISC(olrh, oiis)
 
         return
-
-
-
 
     
 
@@ -448,6 +439,13 @@ class Reporter():
         files = [join(mypath, f) for f in o.decode().split("\n") if ".docx" in f]
 
         merged_document = self.merge_docs(files)
+        for i in range(0,len(merged_document.paragraphs)-1):
+            if "System software and " in merged_document.paragraphs[i].text:
+                self.delete_paragraph(merged_document.paragraphs[i-1])
+                self.delete_paragraph(merged_document.paragraphs[i-2])
+                self.delete_paragraph(merged_document.paragraphs[i-3])
+                break
+        #merged_document.paragraphs[3].text=''
         path='Reports/'+self.name+'.docx'
         merged_document.save(path)
         for f in files:     # clean Temp
