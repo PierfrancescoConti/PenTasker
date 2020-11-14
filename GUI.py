@@ -30,7 +30,7 @@ class Gui:
                [sg.Text('->'),sg.Checkbox(' LiteRespH', size=(9,1),default=True, key='-tool7-')],
                ]
 
-        col2 = [[sg.Text('Exploitation:', font=('Helvetica',13,'bold'))],
+        col2 = [[sg.Text('Scanning:', font=('Helvetica',13,'bold'))],
                [sg.Text('->'),sg.Checkbox(' DirSearch', size=(9,1),default=True, key='-tool5-')],
                [sg.Text('->'),sg.Checkbox(' RHsecapi', size=(9,1),default=True, key='-tool8-')],
                [sg.Text('->'),sg.Checkbox(' IIS SS', size=(9,1),default=True, key='-tool9-')],
@@ -42,7 +42,8 @@ class Gui:
         col3 = [[sg.Text('Attributes:', font=('Helvetica',13,'bold'))],
                [sg.Text('Risk Level:      '), sg.Slider(range=(1, 5), orientation='h', size=(22, 15), default_value=4, key='-RISK-')],
                [sg.Text('Max Threads: '), sg.Spin(values=[i for i in range(1, 30)], initial_value=5, size=(6, 1), key='-THREADS-')],
-               [sg.Text('Scan Mode: '), sg.Radio('Fast', 'rapid', default=True, size=(12, 1), key='-RADIO1-'), sg.Radio('Complete', 'rapid', size=(12, 1), key='-RADIO2-')], 
+               [sg.Text('Scan Mode: '), sg.Radio('Fast', 'rapid', default=True, size=(12, 1), key='-RADIO1-'), sg.Radio('Complete', 'rapid', size=(12, 1), key='-RADIO2-')],
+               [sg.Checkbox('Verbose', size=(9,1), default=True, key='-VERBOSE-')], 
                ]
 
         layout = [  
