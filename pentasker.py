@@ -7,7 +7,6 @@ from os.path import isfile, join
 from glob import glob
 from tkinter import ttk
 from time import gmtime, strftime
-from halo import Halo
 import subprocess
 import PySimpleGUI as sg
 import re 
@@ -182,7 +181,6 @@ def call_nikto(values, ip_addr, port, diz, verbose):
             'output':[(str(port),no_colors(output))]
         }
         diz["tabs"].append(data)
-    spinner.stop()
     if verbose:
         print('\033[44;1m   Nikto                                                                      \033[0m\n')
         print(output)
@@ -190,7 +188,6 @@ def call_nikto(values, ip_addr, port, diz, verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   Nikto - completed                                                          \033[0m\n')
-    spinner.start()
 
 
 def call_vulscan(values, ip_addr, p,diz,verbose):
@@ -256,7 +253,6 @@ def call_dirsearch(values, url, p, num_threads,diz,verbose):
     if error!=None:
         print("ERROR!")
     output, fpath = clean_out_dirsearch(output)    
-    spinner.stop()
     if verbose:
         print('\033[44;1m   DirSearch                                                                  \033[0m\n')
         print(output)
@@ -264,7 +260,6 @@ def call_dirsearch(values, url, p, num_threads,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   DirSearch - completed                                                      \033[0m\n')
-    spinner.start()
 
     x=False
     for X in diz["tabs"]:
@@ -290,7 +285,7 @@ def call_literesph(url,p,diz,verbose):
     for X in diz["tabs"]:
         if X['tool']=='LiteRespH':
             x=True
-            X['output'].append((str(p),output))
+            X['output'].append((str(p),no_colors(output)))
             break
     if x==False:
         data={
@@ -298,7 +293,6 @@ def call_literesph(url,p,diz,verbose):
             'output':[(str(p),no_colors(output))]
         }
         diz["tabs"].append(data)
-    spinner.stop()
     if verbose:
         print('\033[44;1m   LiteRespH                                                                  \033[0m\n')
         print(output)
@@ -306,7 +300,6 @@ def call_literesph(url,p,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   LiteRespH - completed                                                      \033[0m\n')
-    spinner.start()
     
 
 def call_rhsecapi(product,version,diz,verbose):
@@ -327,7 +320,6 @@ def call_rhsecapi(product,version,diz,verbose):
             'output':[(product,no_colors(output))]
         }
         diz["tabs"].append(data)
-    spinner.stop()
     if verbose:
         print('\033[44;1m   RHsecapi                                                                   \033[0m\n')
         print(output)
@@ -335,7 +327,6 @@ def call_rhsecapi(product,version,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   RHsecapi - completed                                                       \033[0m\n')
-    spinner.start()
 
 
 def call_iis_ss(url,p,diz,verbose):
@@ -357,7 +348,6 @@ def call_iis_ss(url,p,diz,verbose):
             'output':[(str(p),no_colors(output))]
         }
         diz["tabs"].append(data)
-    spinner.stop()
     if verbose:
         print('\033[44;1m   IIS Shortname Scanner                                                      \033[0m\n')
         print(output)
@@ -365,7 +355,6 @@ def call_iis_ss(url,p,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   IIS Shortname Scanner - completed                                          \033[0m\n')
-    spinner.start()
 
 def call_legion(ip_addr,protocol,p,diz,verbose):
     output, error=task_legion(ip_addr,protocol,p)
@@ -399,7 +388,6 @@ def call_legion(ip_addr,protocol,p,diz,verbose):
             'output':[(str(p),no_colors(output))]      # get from file
         }
         diz["tabs"].append(data)
-    spinner.stop()
     if verbose:
         print('\033[44;1m   Legion                                                                     \033[0m\n')
         print(output)
@@ -407,7 +395,6 @@ def call_legion(ip_addr,protocol,p,diz,verbose):
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   Legion - completed                                                         \033[0m\n')
-    spinner.start()
 
 
 
@@ -427,7 +414,6 @@ def task_nmap(values, ip_addr, ports, services):
             ports,services = get_ports(output)
 
         if len(ports)==0:
-            spinner.fail()
             print("\033[31;1mNo ports detected... Maybe the host is down.\033[0m ")
         else:
             ######## RILANCIARE IL COMANDO CON -A #########
@@ -435,9 +421,7 @@ def task_nmap(values, ip_addr, ports, services):
             for p in ports:
                 bashCommand+=p+','
             bashCommand=bashCommand[:-1]+' '+ip_addr
-            spinner.stop()
             print('\033[32;1mDetected ports:\033[0m '+ ', '.join(ports) +'\n')
-            spinner.start()
             process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
             output, error =  process.communicate()
             output=output.decode("UTF-8")
@@ -449,7 +433,6 @@ def task_nmap(values, ip_addr, ports, services):
         output=output.decode("UTF-8")
         ports = get_ports(output)
         if len(ports)==0:
-            spinner.fail()
             print("\033[33;1mNo ports detected... Maybe the host is down.\033[0m")
         else:
             ######## RILANCIARE IL COMANDO CON -A #########
@@ -457,9 +440,7 @@ def task_nmap(values, ip_addr, ports, services):
             for p in ports:
                 bashCommand+=p+','
             bashCommand=bashCommand[:-1]+' '+ip_addr
-            spinner.stop()
             print('\033[32;1mDetected ports:\033[0m '+ ', '.join(ports) +'\n')
-            spinner.start()
             process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
             output, error =  process.communicate()
             output=output.decode("UTF-8")
@@ -476,11 +457,8 @@ def task_nikto(values, ip_addr, port):
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
-def task_vulscan(values, ip_addr, ports):
-    bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -sV --script=tools/vulscan/vulscan.nse -p "
-    for p in ports:
-        bashCommand+=p+','
-    bashCommand=bashCommand[:-1]+' '+ip_addr
+def task_vulscan(values, ip_addr, p):
+    bashCommand = "nmap -T" + str(int(values['-RISK-'])) + " -sV --script=tools/vulscan/vulscan.nse -p "+p+' '+ip_addr
     process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
     return process.communicate()
 
@@ -552,7 +530,6 @@ def clean_out_nmap(output):
     try:
         return output.split('\n\n')[1]+'\n'
     except:
-        spinner.fail()
         print("Some problem occurred... maybe the scan is too fast")       #DEBUG
         return output
 
@@ -690,7 +667,6 @@ def call_custom(url,diz, verbose):               # you can CUSTOMIZE this if nee
         'output':output
     }
     diz["tabs"].append(data)
-    spinner.stop()
     if verbose:
         print('\033[44;1m   Custom Scripts                                                             \033[0m\n')
         print(output)
@@ -698,7 +674,6 @@ def call_custom(url,diz, verbose):               # you can CUSTOMIZE this if nee
         print('------------------------------------------------------------------------------')
     else:
         print('\033[44;1m   Custom Scripts - completed                                                 \033[0m\n')
-    spinner.start()
 
 
 def task_custom(url):
@@ -752,7 +727,7 @@ def clean_out_custom(output):
 
 
 # Tasks Caller
-def tasks(values, url, verbose, spinner):
+def tasks(values, url, verbose):
     if values['-tool6-'] and getuid() != 0:
         print("To execute legion I need sudo.")
         bashCommand = "sudo id"
@@ -764,7 +739,6 @@ def tasks(values, url, verbose, spinner):
         process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
         print(process.communicate()[0].decode())
     
-    spinner.start()
 
     url=url.replace('http://','')
     url=url.replace('https://','')
@@ -820,7 +794,6 @@ def tasks(values, url, verbose, spinner):
 
     if ": NXDOMA" in domain:
         domain=ip_addr
-    spinner.stop()
 
     if values['-tool0-']==True:                       # nslookup
         if verbose:
@@ -836,7 +809,6 @@ def tasks(values, url, verbose, spinner):
             print('\033[47;1m\033[34;1m   NsLookup                                                                   \033[0m\n')
             print('\033[47;1m                                                                              \033[0m')
             print('------------------------------------------------------------------------------')
-    spinner.start()
     ##################################################################
     ##################################################################
     if values['-tool1-']==True:                       # nmap
@@ -855,7 +827,6 @@ def tasks(values, url, verbose, spinner):
             'output': [("General", output)]
         }
         diz["tabs"].append(data)
-        spinner.stop()
 
         if verbose:
             print('\033[44;1m   Nmap                                                                       \033[0m\n')
@@ -1125,7 +1096,6 @@ while True:
         verbose=values["-VERBOSE-"]
         printLogo()
         
-        spinner = Halo(text='', spinner='dots')
         
         if "§" in values["-URL-"]:
             verbose=False
@@ -1133,15 +1103,14 @@ while True:
             threads=[]
             num_threads=len(urls)
             for u in urls:
-                process = Thread(target=tasks, args=[values, u, verbose, spinner])  
+                process = Thread(target=tasks, args=[values, u, verbose])  
                 process.start()
                 threads.append(process)
             for process in threads:
                 process.join()
             
         else:
-            tasks(values,values["-URL-"],verbose, spinner)       # main function
-        spinner.stop()
+            tasks(values,values["-URL-"],verbose)       # main function
         exit(0)
 
 
