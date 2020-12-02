@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from GUI import Gui, Gui2
 from threading import Thread
 from protocols import * 
@@ -6,12 +8,13 @@ from os import system, name, path, makedirs, getuid, listdir
 from os.path import isfile, join
 from glob import glob
 from tkinter import ttk
-from time import gmtime, strftime
+from time import gmtime, strftime, time
 import subprocess
 import PySimpleGUI as sg
 import re 
 import json
 import tkinter as tk
+
 
 
 
@@ -218,7 +221,7 @@ def call_vulscan(values, ip_addr, p,diz,verbose):
 
 
 def call_testssl(values, ip_addr, p, num_threads,diz,verbose):
-    ip_addr+=p
+    ip_addr+=":"+p
     output, error=task_testssl(values, ip_addr, num_threads)
     output=output.decode()
     if error!=None:
@@ -760,6 +763,7 @@ def tasks(values, url, verbose):
 
     domain=url.split('/')[0]
     diz["host"]=domain
+    diz["start_time"]=time()
 
     if ':' in domain:
         port = domain.split(':')[1]
@@ -1020,6 +1024,7 @@ def tasks(values, url, verbose):
     print("\n\033[34;1mINFO:\033[0m Waiting for threads...\n")         # DEBUG
     for process in threads:
         process.join()
+    diz["end_time"]=time()
     print('\033[42;1m\033[37;1m                                PT completed!                                 \033[0m\n')
     json.dump(diz, f, ensure_ascii=False, indent=4)
 

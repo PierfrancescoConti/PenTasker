@@ -21,6 +21,7 @@ python2 get-pip.py
 python3 get-pip.py
 pip install requests
 python3 -m pip install requests
+python3 -m pip install pysimplegui
 python3 -m pip install python-docx
 rm get-pip.py
 
