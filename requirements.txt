@@ -1,7 +1,0 @@
-apt install nikto
-
-
-apt install python3
-apt install python3-tk
-pip3 install pysimplegui
-#pip3 install lolcat
