@@ -752,9 +752,9 @@ def tasks(values, url, verbose):
     services = []
     num_threads=values['-THREADS-']
     fname=strftime("%Y-%m-%d %H:%M:%S", gmtime())+"---"+ url.split('/')[0] +".ptsk"
-    if not path.exists('projects'):
-        makedirs('projects')
-    f=open("projects/"+fname, 'w', encoding='utf-8')
+    if not path.exists('Projects'):
+        makedirs('Projects')
+    f=open("Projects/"+fname, 'w', encoding='utf-8')
     diz={}
     diz["tabs"]=[]
 

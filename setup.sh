@@ -2,6 +2,7 @@
 
 mkdir tools
 cd tools
+mkdir _custom
 
 echo -e '\n\n\033[37;1m\033[44;1m             Starting installation             \033[0m\n'
 
