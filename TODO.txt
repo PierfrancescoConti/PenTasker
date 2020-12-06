@@ -1,9 +1,0 @@
-TODO:
-    
-    Insert specific ports to scan (InputText in GUI)
-    mettere nikto in background
-
-    RESP-H checker
-    Cookie flags HTTPOnly and Secure chcker
-
-DONE:
