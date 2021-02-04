@@ -5,7 +5,7 @@ import datetime
 
 
 	
-def getSSAPNU(outsRH):		################### CONSIDERARE DI FILTRARE I CVE #################
+def getSSAPNU(outsRH):
 	lsoftware = []		# listaSoftware
 	lcve=[]		# tot cves
 	hcve=[]		# (host,listaCVE) - attenzione: gli host si ripetono
@@ -29,15 +29,28 @@ def getSSAPNU(outsRH):		################### CONSIDERARE DI FILTRARE I CVE ######
 	if len(lsoftware)>0:
 		print("The following CVEs were detected:")
 		diz=dict((x,lcve.count(x)) for x in lcve)
+		diz.pop('', None)
 		diz=dict(sorted(diz.items(), key=lambda item: item[1], reverse=True))
+		i=0
 		for e in diz.keys():
+			if i==15:		# LIMIT first 15 CVEs
+				break
 			print(e+" was found "+str(diz[e])+" times inside the following hosts: ", end="")
 			hostl=[]
 			for (h,l) in hcve:
 				if e in l:
 					hostl.append(h)
 			print(list(dict.fromkeys(hostl)))
+			i+=1
 		print()	
+		i=0
+		for e in diz.keys():
+			if i==15:		# LIMIT first 15 CVEs
+				break
+			print(e+","+str(diz[e]))
+			i+=1
+		print()	
+		
 	return
 	
 def getRESPH(outsLRH):
@@ -84,6 +97,10 @@ def getRESPH(outsLRH):
 			print(hostl)
 		print()
 		
+		for e in diz.keys():
+			print(e+","+str(diz[e]))
+		print()	
+		
 	if len(leaks)>0:
 		diz=dict((x,leaks.count(x)) for x in leaks)
 		diz=dict(sorted(diz.items(), key=lambda item: item[1], reverse=True))
@@ -97,6 +114,10 @@ def getRESPH(outsLRH):
 			print(hostl)
 		print()
 		
+		for e in diz.keys():
+			print(e.replace("<?> Found  ","").replace("  field","")+","+str(diz[e]))
+		print()	
+		
 	if len(methods)>0:
 		diz=dict((x,methods.count(x)) for x in methods)
 		diz=dict(sorted(diz.items(), key=lambda item: item[1], reverse=True))
@@ -109,7 +130,10 @@ def getRESPH(outsLRH):
 					hostl.append(m)
 			print(hostl)
 		print()
-	
+		
+		for e in diz.keys():
+			print(e.replace("<!> Missing  ","").replace("  field","")+","+str(diz[e]))
+		print()	
 	
 	return
 
@@ -152,6 +176,10 @@ def getPorts(outPorts):
 					hostl.append(m)
 			print(hostl)
 		print()
+		
+		for e in diz.keys():
+			print(e+","+str(diz[e]))
+		print()	
 	
 def getServ(outServ):
 	dizserv={}
@@ -175,11 +203,26 @@ def getServ(outServ):
 					hostl.append(m)
 			print(hostl)
 		print()
+		
+		for e in diz.keys():
+			print(e+","+str(diz[e]))
+		print()	
 	
 def getDurata(outsTime):
+	m=0
+	tot=0
+	i=0
 	for (host,time) in outsTime:
+		if int(time)>m:
+			m=int(time)
+		tot+=int(time)
+		i+=1
 		print("The scan on the host "+host+" lasted -> "+str(datetime.timedelta(seconds=int(time)))+" (hh:mm:ss)")
 	print()
+	print("Average: "+str(datetime.timedelta(seconds=int(tot/i))))
+	print("Max: "+str(datetime.timedelta(seconds=int(m))))
+	print()
+
 
 
 
@@ -197,7 +240,7 @@ outServ=[]
 
 # get RHsecapi outs
 for fn in onlyfiles:
-	#print(fn)
+	print(fn.split("---")[1][0:-5])   # DEBUG
 	f=open(fn,'r', encoding='utf-8')
 	data=json.loads(f.read())
 	allouts.append(data)
@@ -213,7 +256,7 @@ for fn in onlyfiles:
 		if 'iis' in X['tool'].strip().lower():
 			outsIIS.append((data['host'],X['output']))
 			
-
+print()
 getPorts(outPorts)
 getServ(outServ)
 getSSAPNU(outsRH)

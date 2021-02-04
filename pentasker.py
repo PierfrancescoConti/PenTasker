@@ -731,6 +731,8 @@ def clean_out_custom(output):
 
 # Tasks Caller
 def tasks(values, url, verbose):
+    if url=="":
+        print("\033[31;1mEmpty URL.\033[0m ")
     if values['-tool6-'] and getuid() != 0:
         print("To execute legion I need sudo.")
         bashCommand = "sudo id"
@@ -1080,8 +1082,16 @@ while True:
             if event == 'Generate\nReport':	# if user closes window or clicks cancel
                 # name, host, ports, services, tabs
                 # filename.split("/")[-1], data['host'], data['ports'], data['services'], data['tabs']
-                f=open(filename,'r', encoding='utf-8')
-                data=json.loads(f.read())
+                try:
+                    f=open(filename,'r', encoding='utf-8')
+                except:
+                    print("\033[31;1mERROR: File not found\033[0m")
+                    exit()
+                try:
+                    data=json.loads(f.read())
+                except:
+                    print("\033[31;1mERROR: Invalid file\033[0m")
+                    exit()
                 reporter=Reporter(filename.split("/")[-1], data['host'], data['ports'], data['services'], data['tabs'])
                 path=reporter.generate_report()
                 sg.Popup("Report correctly generated. Its location is:\n"+path,title="Done!")

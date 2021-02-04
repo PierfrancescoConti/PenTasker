@@ -74,9 +74,17 @@ class Gui2():
         help_b64 = b'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAABmJLR0QA/wD/AP+gvaeTAAAAB3RJTUUH5AcaCTUSktwQrgAABF9JREFUOMt9VVtoVFcUXXufc+c6GTOWiUlmRqPVmMRgqSRpK9j6Aq2pFkTbn4JCm0IhYNC+RAT729IWURQUpFZQ8KugViEgRZuixTYxVSqah7UdTWZimMTmNbkz95zdj3FMGkvX99lr7bXX3hzatOccamqqEAwWIZ1Oc7i4GEcOHrSZxANnS3NzXTwWrVdaxwDA+H6yP5m6ce7Y0c5gRUVu5+7dPDI6ipKSEjuRmUB3Vw+o5XgnSiKz0Xv3Pp/at0GIiN/96to70Wh5S2h2qE5r7TAzAMBaC9/3c+Pj452p1MDhk5+sPCMidsfnl2hJzSKbHhoD7TnZhb7+JF/64bJdUrk4umLFK9+Wls5tdF1XAJCIWAIEAAQgImIA4nkeDQ4Otl6//ut7vb1/pDasX8vz4jGrwlWN3PZju31+UTy+evWq1lgs+qrW2jfGEAACQJ4v7FthxSARgbVWHMcxxcXF1ZFI5PXHw8Pn29u7RnTAYRIRAiAfnbh7Yd68+GYRyYnAYQZ8AxABCyIaAJAY8iECaAVYCxBTjgCnr6//4oGmpW8CINp14g7+Tg9tr66pPuW6rm+t1QTACOBqwlsvFSGgCACQNYLv2ifg+QL1ZA7M7Huep7u7unfMKYmc5kNNtRyNRZtd14UxhoF8V15O8Fq1i0xWcLxtFMfbRjGZE6yqduHlBJTXgDGGXddFNBZtPtRUy7x1f2tDKBSqzxMRA3hqq7RY4eaDLAoiHX9mEQkpaPUkpXwNAUAoFKrbur+1nsuj5fVa61kiYjENTITbD7MYyVgEFCGbE1SWaYx7Nj/bqackIlZrHYxGyxvYUSrOzBCRgigEgGKgM5FFeswiawTLKwJYFg/gWq8HR091mHckwsxQSsUY/4NZDsEKUDJbYcOyInz/2wQejRoEFEHkv2s4Z/x+a+3TWczEZE5QvyCAxJCP2/1ZFAXyItNBRGSthTGmnwdSjzp8388UApmOgvXRSYu+YR8B/SwZACEi9n0/k0oN3CAAvPf0vZ9KS0tXGmPsTGICMJHLsxQ5hJl8ImKVUjw4OHj1i+2Vq3nXiTs2lUwd9TwPSql/JU0EeL5gfW0Q62uD8Pyp/StAKWU9z0MqmTq265s79pnTA5ATEWf6gq9dGgQAXLmbgetMBUJEOQBOX1/fxQNNtfnTe+PTC/zL9Vt20eKy2Lp1a1rLy8teJCLfGMMF+1k/zxDQNN2mFRE9MDBw68qVtsb79waSL69YzmrbB59JedlzfKPz5ujY2NjZOeHwC+4st9pxnELy1lFktSIBEZiZmBme56lkMtV69drPb/f23k9t3LiGqyoXWlW/+X3Mr5grkXCYL365bayxoexMRcPWHmaaT0RlALQAbEXYGEOe5+WGhx93JBKJvcd21u972HF27PeU4aqlC+3IeAa0ac951FQvQbAoiHR6iMPhYhz++oCdTPylt+xsqYvHog0zvoCOc0cOd7oLFvotH3/IIyOFLyCDnu4e/APBGx1vAKSNpgAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMC0wNy0yNlQwOTo1MzoxOC0wNzowMGgxnG4AAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjAtMDctMjZUMDk6NTM6MTgtMDc6MDAZbCTSAAAAAElFTkSuQmCC'        
         sg.theme('DarkBlue')
         sg.SetOptions(element_padding=((10,10),9))
-        f=open(filename,'r', encoding='utf-8')
+        try:
+            f=open(filename,'r', encoding='utf-8')
+        except:
+            print("\033[31;1mERROR: File not found\033[0m")
+            exit()
         
-        data=json.loads(f.read())
+        try:
+            data=json.loads(f.read())
+        except:
+            print("\033[31;1mERROR: Invalid file\033[0m")
+            exit()
 
         tabsX = []
         for X in data['tabs']:

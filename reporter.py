@@ -146,18 +146,6 @@ class Reporter():
             par=self.find_in_par("– 8.3 enumeration result",doc)
             self.delete_paragraph(par)
 
-            par=self.find_in_par("It is recommended to disable the creation of short names ",doc)
-            self.delete_paragraph(par)
-
-            par=self.find_in_par("This option can be set by changing the value of the registry key",doc)
-            self.delete_paragraph(par)
-
-            par=self.find_in_par("NtfsDisable8dot3NameCreation",doc)
-            self.delete_paragraph(par)
-
-            par=self.find_in_par("Please note that this option does not change the files, but changes the way the NTFS file system handles and displays the files.",doc)
-            self.delete_paragraph(par)
-
             table=self.find_in_tab("java -jar iis_shortname_scanner.jar", doc)
             table._element.getparent().remove(table._element)
         else:
@@ -176,9 +164,6 @@ class Reporter():
             self.delete_paragraph(par)
 
             par=self.find_in_par("- List of used and recognized methods",doc)
-            self.delete_paragraph(par)
-
-            par=self.find_in_par("It is also recommended to disable the HTTP OPTIONS/PUT/DELETE/TRACE",doc)
             self.delete_paragraph(par)
 
             table=self.find_in_tab("Allow: GET, POST, OPTIONS, HEAD, MKCOL", doc)
@@ -300,7 +285,6 @@ class Reporter():
                 bashCommand = "rm Reports/Temp/doc2.docx"
                 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
                 process.communicate()
-        doc = self.merge_docs(['Reports/Temp/3-SSAP-NU.docx','Templates/SSAP-NU-SS.docx'])
         doc.add_page_break()
         doc.save('Reports/Temp/3-SSAP-NU.docx')
         return
@@ -312,8 +296,9 @@ class Reporter():
     
     def gen_CRYPWK(self, TSSLouts):      # check if CRYP-WK is True
         doc = Document('Templates/CRYP-WK.docx')
-        par=self.find_in_par("Output testssl",doc)
-        par.text=TSSLouts[0][1]
+        table=self.find_in_tab("Output testssl", doc)
+        table=self.clear_table(table)
+        table.cell(0,0).paragraphs[0].text=self.sanitize(TSSLouts[0][1]).strip()
         doc.save('Reports/Temp/5-CRYP-WK.docx')
         return
     
