@@ -39,6 +39,13 @@ Choose the tools you want to execute (recommended all) and setup the execution a
 After this start the tasks and go take a coffee! ☕️
 <hr>
 
+### CLI mode
+It is possible to execute PenTasker also by command line. For further information run the following command:
+```
+./pentasker.py -h
+```
+<hr>
+
 ### Import Projects
 After an execution, a file PTSK is generated. It contains the relative scan's results.<br>
 It is possible to review these results, by choosing the file through the Import Project functionality.<br><br>
