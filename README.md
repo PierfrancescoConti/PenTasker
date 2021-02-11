@@ -33,7 +33,7 @@ python3 pentasker.py
 ```
 <br>
 
-![Screenshot](main-GUI.png) <br><br>
+![Screenshot](Screenshots/main-GUI.png) <br><br>
 
 Choose the tools you want to execute (recommended all) and setup the execution attributes.<br>
 After this start the tasks and go take a coffee! ☕️
@@ -42,13 +42,13 @@ After this start the tasks and go take a coffee! ☕️
 ### Import Projects
 After an execution, a file PTSK is generated. It contains the relative scan's results.<br>
 It is possible to review these results, by choosing the file through the Import Project functionality.<br><br>
-![Screenshot](Out-display.png) <br><br>
+![Screenshot](Screenshots/Out-display.png) <br><br>
 <hr>
 
 
 ### Screenshot
 
-![Screenshot](Overview.png) 
+![Screenshot](Screenshots/Overview.png) 
 <hr>
 
 
