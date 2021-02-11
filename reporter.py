@@ -179,7 +179,7 @@ class Reporter():
     
     def gen_SSAPNU(self, RHouts, LRHouts, host):      # check if SSAP-NU and its content is True
         doc = Document('Templates/SSAP-NU.docx')
-        doc2 = Document('Templates/SSAP-NU-elem.docx')
+        
         if LRHouts == []:
             par=self.find_in_par("The next Box shows the evidence of the software component version in the response header.",doc)
             self.delete_paragraph(par)
@@ -240,6 +240,7 @@ class Reporter():
 
             else:
                 # modify elem and append
+                doc2 = Document('Templates/SSAP-NU-elem.docx')
                 ou=o[1].strip()
                 ou = ''.join(c for c in ou if self.valid_xml_char_ordinal(c))
                 i=1

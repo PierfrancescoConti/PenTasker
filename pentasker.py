@@ -10,6 +10,7 @@ from glob import glob
 from tkinter import ttk
 from time import gmtime, strftime, time
 import subprocess
+import sys
 import PySimpleGUI as sg
 import re 
 import json
@@ -20,13 +21,194 @@ import tkinter as tk
 
 
 
-'''#################################################################
-TODO:
-    manage arguments for each tool (num_threads, etc...)
-        - check each tool
+def print_usage():
+    s='''
+\nUsage:
+ _____________________________________________________________________________
+| ./pentasker.py               |          Start the GUI                       |
+| ./pentasker.py <URL/IP>      |          Start from CLI                      |
+|______________________________|______________________________________________|
+| Other arguments for the CLI:                                                |
+| ./pentasker.py -u <URL/IP> [-t NUMTHREADS] [-r RISK] [-m MODE]              |
+|                            [-y TOOL1,TOOL2,...] [-n TOOL1,TOOL2,...]        |
+|                                                                             |
+|   -h, --help                 |  Prints this Usage message                   |
+|                              |                                              |
+|   -u, --url URL/IP           |  URL/IP to scan                              |
+|   -f, --file URLs.txt        |  Input list of targets from a file           |
+|   -t, --threads NUMTHREADS   |  Number of threads to scan (default: 5)      |
+|   -r, --risk RISK            |  Risk level (from 0 to 5) (default: 4)       |
+|   -m, --mode MODE            |  Scan mode (f=fast, c=complete) (default: f) |
+|   -v, --verbose              |  Verbose mode on                             |
+|   -y, --yes TOOL1,TOOL2,...  |  Choose tools to run                         |
+|   -n, --no TOOL1,TOOL2,...   |  Run all the tools less the ones defined     |
+|______________________________|______________________________________________|
 
-#################################################################'''
 
+Tool legend:
+    ./pentasker -u 127.0.0.1 -y nikto,vulscan,lrh,testssl,dirsearch,rhsa,iis,legion,custom
+ __________________________________________________________________________
+|    Nikto -> nikto                   |     TestSSL.sh -> testssl          |
+|    VulScan -> vulscan               |     DirSearch -> dirsearch         |
+|    LiteRespH -> lrh                 |     RHsecapi -> rhsa               |
+|    IIS Shortname Scanner -> iis     |     Legion -> legion               |        
+|    Custom tools -> custom           |                                    |
+|_____________________________________|____________________________________| 
+
+'''
+    print(s)
+    exit()
+
+
+
+def argparser():
+
+    if '-h' in sys.argv or '--help' in sys.argv:
+        print_usage()
+    elif '-u' not in sys.argv and '--url' not in sys.argv and '-f' not in sys.argv and '--file' not in sys.argv:
+        print('\n\033[31;1mMissing "-u", "--url" or "-f", "--file" arguments.\033[0m')
+        print_usage()
+    elif ('-y' in sys.argv and '-n' in sys.argv) or ('-y' in sys.argv and '--no' in sys.argv) or ('--yes' in sys.argv and '-n' in sys.argv) or ('--yes' in sys.argv and '--no' in sys.argv):
+        print('\n\033[31;1mYES or NO? I\'m confused...\033[0m')
+        print_usage()
+    elif ('-u' in sys.argv and '-f' in sys.argv) or ('-y' in sys.argv and '--file' in sys.argv) or ('--url' in sys.argv and '-f' in sys.argv) or ('--url' in sys.argv and '--file' in sys.argv):
+        print('\n\033[31;1mPlease insert only url OR file (not together).\033[0m')
+        print_usage()
+    
+
+    values={}
+    values['-tool0-']=True
+    values['-tool1-']=True
+    values['-tool2-']=False
+    values['-tool3-']=False
+    values['-tool4-']=False
+    values['-tool5-']=False
+    values['-tool6-']=False
+    values['-tool7-']=False
+    values['-tool8-']=False
+    values['-tool9-']=False
+    values['-custom-']=False
+    values['-VERBOSE-']=False
+    values['-THREADS-']=5
+    values['-RISK-']=4
+    values['-RADIO1-']=True
+    values['-RADIO2-']=False
+
+    if '-y' not in sys.argv and '--yes' not in sys.argv and '-n' not in sys.argv and '--no' not in sys.argv:
+        print('\n\033[33;1mNo tool selected, I assume you want all of them.\033[0m')
+        values['-tool2-']=True
+        values['-tool3-']=True
+        values['-tool4-']=True
+        values['-tool5-']=True
+        values['-tool6-']=True
+        values['-tool7-']=True
+        values['-tool8-']=True
+        values['-tool9-']=True
+        values['-custom-']=True
+
+    for i in range(0, len(sys.argv)):
+        try:
+            if sys.argv[i]=='-u' or sys.argv[i]=='--url': 
+                values["-URL-"]= sys.argv[i+1]
+            if sys.argv[i]=='-f' or sys.argv[i]=='--file': 
+                targets=open(sys.argv[i]+1).read()
+                targets=targets.strip()
+                values['-URL-']=targets.replace("\n","§")
+            if sys.argv[i]=='-t' or sys.argv[i]=='--threads': 
+                values["-THREADS-"]= int(sys.argv[i+1])
+            if sys.argv[i]=='-r' or sys.argv[i]=='--risk': 
+                if int(sys.argv[i+1])>5 or int(sys.argv[i+1])<0:
+                    print('\n\033[31;1mRisk must be a value between 0 and 5\033[0m')
+                    print_usage()
+                values["-RISK-"]= int(sys.argv[i+1])
+            if sys.argv[i]=='-y' or sys.argv[i]=='--yes': 
+                ltools = sys.argv[i+1].split(',')
+                for e in ltools:
+                    if e.strip() == "nikto":
+                        values['-tool2-']=True
+                        print("2")
+                    elif e.strip() == "vulscan":
+                        values['-tool3-']=True
+                        print("3")
+                    elif e.strip() == "testssl":
+                        values['-tool4-']=True
+                        print("4")
+                    elif e.strip() == "dirsearch":
+                        values['-tool5-']=True
+                        print("5")
+                    elif e.strip() == "legion":
+                        values['-tool6-']=True
+                        print("6")
+                    elif e.strip() == "lrh":
+                        values['-tool7-']=True
+                        print("7")
+                    elif e.strip() == "rhsa":
+                        values['-tool8-']=True
+                        print("8")
+                    elif e.strip() == "iis":
+                        values['-tool9-']=True
+                        print("9")
+                    elif e.strip() == "custom":
+                        values['-custom-']=True
+                        print("c")
+                    else:
+                        print('\n\033[31;1mInvalid tool name: \033[0m'+e)
+                        print_usage()
+            if sys.argv[i]=='-n' or sys.argv[i]=='--no': 
+                ltools = sys.argv[i+1].split(',')
+                values['-tool2-']=True
+                values['-tool3-']=True
+                values['-tool4-']=True
+                values['-tool5-']=True
+                values['-tool6-']=True
+                values['-tool7-']=True
+                values['-tool8-']=True
+                values['-tool9-']=True
+                values['-custom-']=True
+                for e in ltools:
+                    if e.strip() == "nikto":
+                        values['-tool2-']=False
+                    elif e.strip() == "vulscan":
+                        values['-tool3-']=False
+                    elif e.strip() == "testssl":
+                        values['-tool4-']=False
+                    elif e.strip() == "dirsearch":
+                        values['-tool5-']=False
+                    elif e.strip() == "legion":
+                        values['-tool6-']=False
+                    elif e.strip() == "lrh":
+                        values['-tool7-']=False
+                    elif e.strip() == "rhsa":
+                        values['-tool8-']=False
+                    elif e.strip() == "iis":
+                        values['-tool9-']=False
+                    elif e.strip() == "custom":
+                        values['-custom-']=False
+                    else:
+                        print('\n\033[31;1mInvalid tool name: \033[0m'+e)
+                        print_usage()
+            if sys.argv[i]=='-m' or sys.argv[i]=='--mode':
+                if sys.argv[i+1]=='f':
+                    values["-RADIO1-"]= True
+                    values["-RADIO2-"]= False
+                elif sys.argv[i+1]=='c':
+                    values["-RADIO2-"]= True
+                    values["-RADIO1-"]= False
+                else:
+                    print('\n\033[31;1mCan\'t undersand the scan mode.\033[0m')
+                    print_usage()
+            if sys.argv[i]=='-v' or sys.argv[i]=='--verbose':
+                values["-VERBOSE-"]= True
+        except:
+            print("\033[31;1mSomething went wrong with the following argument: \033[0m"+sys.argv[i])
+            exit()
+
+    return values
+
+
+def start_cli():
+    values=argparser()
+    launch(values)
 
 
 
@@ -1033,9 +1215,30 @@ def tasks(values, url, verbose):
     return
 
 
+def launch(values):
+    verbose=values["-VERBOSE-"]
+    printLogo()
+    
+    
+    if "§" in values["-URL-"]:
+        verbose=False
+        urls=values["-URL-"].split("§")
+        threads=[]
+        for u in urls:
+            process = Thread(target=tasks, args=[values, u, verbose])  
+            process.start()
+            threads.append(process)
+        for process in threads:
+            process.join()
+        
+    else:
+        tasks(values,values["-URL-"],verbose)       # main function
+    exit(0)
 
 
-
+if len(sys.argv)>1:
+    start_cli()
+    exit(0)
 # Event Loop to process "events" and get the "values" of the inputs
 gui= Gui()
 win=gui.window
@@ -1079,7 +1282,7 @@ while True:
             if event == sg.WIN_CLOSED or event == 'Close':	# if user closes window or clicks cancel
                 win.close()
                 exit(0)
-            if event == 'Generate\nReport':	# if user closes window or clicks cancel
+            if event == 'Generate\nReport':
                 # name, host, ports, services, tabs
                 # filename.split("/")[-1], data['host'], data['ports'], data['services'], data['tabs']
                 try:
@@ -1108,25 +1311,7 @@ while True:
         # other controls on URL/IP
         win.hide()
         win.close()
-        verbose=values["-VERBOSE-"]
-        printLogo()
-        
-        
-        if "§" in values["-URL-"]:
-            verbose=False
-            urls=values["-URL-"].split("§")
-            threads=[]
-            num_threads=len(urls)
-            for u in urls:
-                process = Thread(target=tasks, args=[values, u, verbose])  
-                process.start()
-                threads.append(process)
-            for process in threads:
-                process.join()
-            
-        else:
-            tasks(values,values["-URL-"],verbose)       # main function
-        exit(0)
+        launch(values)
 
 
     
